@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from setuptools import setup, find_packages
 
-README = (Path() / "README.rst").read_text()
+README = (Path() / "README.md").read_text()
 
 _init = (Path() / "falcon_auth2" / "__init__.py").read_text()
 VERSION = re.compile(r""".*__version__ = ["'](.*?)['"]""", re.S).match(_init).group(1)
@@ -16,7 +16,7 @@ setup(
     version=VERSION,
     description="Falcon authentication middleware that supports multiple authentication types. ",
     long_description=README,
-    long_description_content_type="text/x-rst",
+    long_description_content_type="text/markdown",
     author="Federico Caselli",
     author_email="cfederico87+pypi@gmail.com",
     url="https://github.com/CaselIT/falcon-auth2",

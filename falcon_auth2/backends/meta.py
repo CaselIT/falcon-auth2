@@ -8,8 +8,8 @@ from .base import AuthBackend
 
 
 class CallBackBackend(AuthBackend):
-    """Meta-Backend used to notify the application when another backend has success and/or fails to
-    authenticate a request.
+    """Meta-Backend used to notify when another backend has success and/or fails to authenticate
+    a request.
 
     This backend delegates all the authentication actions to the provided ``backend``.
 
@@ -61,7 +61,7 @@ class CallBackBackend(AuthBackend):
 class MultiAuthBackend(AuthBackend):
     """Meta-Backend used to combine multiple authentication backends.
 
-    This backend successfully authenticates a request if one of the probided backends can
+    This backend successfully authenticates a request if one of the provided backends can
     authenticate the request; raises ``BackendNotApplicable`` if no backend can authenticate it.
 
     This backend delegates all the authentication actions to the provided ``backends``.
