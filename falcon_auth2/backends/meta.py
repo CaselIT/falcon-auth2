@@ -1,0 +1,123 @@
+from typing import Callable, Iterable, List, Optional
+
+from falcon import HTTPUnauthorized
+
+from ..exc import BackendNotApplicable
+from ..utils import RequestAttributes, check_backend
+from .base import AuthBackend
+
+
+class CallBackBackend(AuthBackend):
+    """Meta-Backend used to notify the application when another backend has success and/or fails to
+    authenticate a request.
+
+    This backend delegates all the authentication actions to the provided ``backend``.
+
+    Args:
+        backend (AuthBackend): The backend that will be used to authenticate the users.
+    Keyword Args:
+        on_success (Optional[Callable], optional): Callable function that will be invoked with the
+            :class:`RequestAttributes`, the backend and the authentication result after a successful
+            request authentication. Defaults to None.
+        on_failure (Optional[Callable], optional): Callable function that will be invoked with the
+            :class:`RequestAttributes`, the backend and the raised exception after a failed
+            request authentication. Defaults to None.
+
+            Note:
+                This method cannot be used to suppress the exception raised by ``backend``
+    """
+
+    def __init__(
+        self,
+        backend: AuthBackend,
+        *,
+        on_success: Optional[Callable] = None,
+        on_failure: Optional[Callable] = None,
+    ):
+        check_backend(backend)
+        if on_success and not callable(on_success):
+            raise TypeError(f"Expected on_success {on_success} to be a callable object")
+        if on_failure and not callable(on_failure):
+            raise TypeError(f"Expected on_failure {on_failure} to be a callable object")
+
+        self.backend = backend
+        self.on_success = on_success
+        self.on_failure = on_failure
+
+    def authenticate(self, attributes: RequestAttributes) -> dict:
+        "Authenticates the request and returns the authenticated user."
+        try:
+            results = self.backend.authenticate(attributes)
+            results.setdefault("backend", self.backend)
+            if self.on_success:
+                self.on_success(attributes, self.backend, results)
+            return results
+        except Exception as e:
+            if self.on_failure:
+                self.on_failure(attributes, self.backend, e)
+            raise
+
+
+class MultiAuthBackend(AuthBackend):
+    """Meta-Backend used to combine multiple authentication backends.
+
+    This backend successfully authenticates a request if one of the probided backends can
+    authenticate the request; raises ``BackendNotApplicable`` if no backend can authenticate it.
+
+    This backend delegates all the authentication actions to the provided ``backends``.
+
+    Args:
+        backends (Iterable[AuthBackend]): The backends to use. They will be used in order.
+    Keyword Args:
+        continue_on (Callable): A callable object that is called when a backend raises an exception
+            and returns ``True`` if processing should continue or ``False`` if it should stop by
+            re-raising the backend exception. The callable takes two arguments: the backend and the
+            raised exception. The default implementation continues returns ``True`` if any backend
+            raises ``BackendNotApplicable``.
+
+            Note:
+                This callable is only called if a backend raises an instance of ``HTTPUnauthorized``
+                of one of it's subclasses. All other exception types are propagated.
+    """
+
+    def __init__(self, backends: Iterable[AuthBackend], *, continue_on: Optional[Callable] = None):
+        self.backends = tuple(backends)
+        if len(self.backends) < 2:
+            raise ValueError("Must pass more than two backend")
+        if any(not isinstance(b, AuthBackend) for b in self.backends):
+            raise TypeError("All backends must inherit from `AuthBackend`")
+        if continue_on and not callable(continue_on):
+            raise TypeError(f"Expected {continue_on} to be a callable object")
+
+        self.continue_on = continue_on or self._default_continue
+
+    def authenticate(self, attributes: RequestAttributes):
+        "Authenticates the request and returns the authenticated user."
+        challenges = []
+
+        for backend in self.backends:
+            try:
+                result = backend.authenticate(attributes)
+                result.setdefault("backend", backend)
+                return result
+            except HTTPUnauthorized as exc:
+                if self.continue_on(backend, exc):
+                    self._append_challenges(challenges, exc)
+                else:
+                    raise
+
+        raise BackendNotApplicable(
+            description="Cannot authenticate the request", challenges=challenges
+        )
+
+    @staticmethod
+    def _default_continue(backend: AuthBackend, exc: Exception):
+        return isinstance(exc, BackendNotApplicable)
+
+    @staticmethod
+    def _append_challenges(challenges: List[str], err: HTTPUnauthorized):
+        if err.headers:
+            headers = err.headers if isinstance(err.headers, dict) else dict(err.headers)
+            www_authenticate = headers.get("WWW-Authenticate")
+            if www_authenticate:
+                challenges.append(www_authenticate)

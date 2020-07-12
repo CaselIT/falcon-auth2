@@ -1,10 +1,9 @@
-import falcon
 import pytest
 from falcon import testing
 
 from falcon_auth2 import AuthMiddleware
 
-from ..conftest import User
+from ..conftest import User, create_app
 
 
 class AuthResource:
@@ -34,19 +33,13 @@ def user_dict():
     return {str(id): User(id=id, user=f"user{id}", pwd=f"pwd{id}") for id in range(5)}
 
 
-@pytest.fixture(scope="function")
-def auth_middleware(backend):
-    return AuthMiddleware(backend)
+def create_app_backend(backend_gn, resource):
+    return create_app(AuthMiddleware(backend_gn()), resource)
 
 
 @pytest.fixture
-def app(auth_middleware, resource):
-
-    api = falcon.API(middleware=[auth_middleware])
-
-    api.add_route("/auth", resource)
-    api.add_route("/posts/{post_id}", resource)
-    return api
+def app(backend, resource):
+    return create_app_backend(lambda: backend, resource)
 
 
 @pytest.fixture
