@@ -37,7 +37,7 @@ class TestBasicAuth(ResourceFixture):
         assert bab.getter.header_key == "Authorization"
         assert bab.getter.auth_header_type == "basic"
 
-        bab = BasicAuthBackend(find_user, "CustomType")
+        bab = BasicAuthBackend(find_user, auth_header_type="CustomType")
         assert bab.user_loader == find_user
         assert bab.challenges == ("CustomType",)
         assert bab.auth_header_type == "CustomType"
@@ -46,7 +46,7 @@ class TestBasicAuth(ResourceFixture):
         assert bab.getter.auth_header_type == "customtype"
 
         g = ParamGetter("bar")
-        bab = BasicAuthBackend(find_user, "foobar", g)
+        bab = BasicAuthBackend(find_user, auth_header_type="foobar", getter=g)
         assert bab.user_loader == find_user
         assert bab.getter is g
         assert bab.challenges == ("foobar",)
@@ -88,7 +88,7 @@ class TestBasicAuth(ResourceFixture):
     class TestBasicAuthOtherType:
         @pytest.fixture
         def backend(self, user_dict):
-            return BasicAuthBackend(find_user(user_dict), "CustomType")
+            return BasicAuthBackend(find_user(user_dict), auth_header_type="CustomType")
 
         def test_ok(self, user_dict, client):
             user = user_dict["2"]

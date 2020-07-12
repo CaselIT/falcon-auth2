@@ -12,9 +12,10 @@ from .base import BaseAuthBackend
 class BasicAuthBackend(BaseAuthBackend):
     """Implements the `'Basic' HTTP Authentication Scheme <https://tools.ietf.org/html/rfc7617>`_.
 
-    Clients should authenticate by passing a ``base64`` encoded credentials in the format
-    ``username:password`` in the ``Authorization`` HTTP header, prepended with the
-    type specified in the setting ``auth_header_type``. For example:
+    Clients should authenticate by passing the credential in the format ``username:password``
+    encoded in ``base64`` in the ``Authorization`` HTTP header, prepended with the
+    type specified in the setting ``auth_header_type``. For example the user Aladdin would provide
+    is password, ``'open sesame'`` as:
 
         Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 
@@ -29,7 +30,7 @@ class BasicAuthBackend(BaseAuthBackend):
             Defaults to ``Basic``.
 
             Note:
-                When using a custom getter this value is just used to generate the ``challenges``,
+                When using a custom getter this value is only used to generate the ``challenges``,
                 since the getter will be used to obtain the credentials to authenticate.
         getter (Optional[Getter]): Getter used to extract the authentication information from the
             request. When using a custom getter, the returned value must be a ``base64`` encoded
@@ -40,10 +41,11 @@ class BasicAuthBackend(BaseAuthBackend):
     def __init__(
         self,
         user_loader: Callable,
+        *,
         auth_header_type: str = "Basic",
         getter: Optional[Getter] = None,
     ):
-        super().__init__(user_loader, (auth_header_type,))
+        super().__init__(user_loader, challenges=(auth_header_type,))
         if getter:
             check_getter(getter)
         self.auth_header_type = auth_header_type

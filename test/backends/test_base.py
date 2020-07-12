@@ -17,7 +17,7 @@ class TestNoAuthBackend(ResourceFixture):
         assert nab.user_loader == mock_loader
         assert nab.challenges is None
 
-        nab = NoAuthBackend(mock_loader, (c for c in ["foo", "bar"]))
+        nab = NoAuthBackend(mock_loader, challenges=["foo", "bar"])
         assert nab.user_loader == mock_loader
         assert nab.challenges == ("foo", "bar")
 
@@ -62,7 +62,7 @@ class TestGenericAuthBackend(ResourceFixture):
         assert gab.challenges is None
         assert gab.payload_key is None
 
-        gab = GenericAuthBackend(mock_loader, g, "foobar", tuple("abc"))
+        gab = GenericAuthBackend(mock_loader, g, payload_key="foobar", challenges=list("abc"))
         assert gab.user_loader == mock_loader
         assert gab.getter is g
         assert gab.challenges == tuple("abc")
@@ -76,7 +76,7 @@ class TestGenericAuthBackend(ResourceFixture):
             GenericAuthBackend(mock_loader, 123)
         for pk in ("backend", "user"):
             with pytest.raises(ValueError, match="The payload_key cannot have"):
-                GenericAuthBackend(mock_loader, g, pk)
+                GenericAuthBackend(mock_loader, g, payload_key=pk)
 
     @pytest.fixture
     def backend(self, user_dict):

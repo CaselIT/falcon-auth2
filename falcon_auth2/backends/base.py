@@ -34,7 +34,7 @@ class AuthBackend(metaclass=ABCMeta):
         """
 
 
-class BaseAuthBackend(AuthBackend):
+class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
     """Utility class that handles calling a provided function to load an user from the
     request authentication information in the :meth:`load_user`.
 
@@ -54,7 +54,7 @@ class BaseAuthBackend(AuthBackend):
             Defaults to ``None``.
     """
 
-    def __init__(self, user_loader: Callable, challenges: Optional[Iterable[str]] = None):
+    def __init__(self, user_loader: Callable, *, challenges: Optional[Iterable[str]] = None):
         if not callable(user_loader):
             raise TypeError(f"Expected {user_loader} to be a callable object")
 
@@ -103,16 +103,18 @@ class NoAuthBackend(BaseAuthBackend):
 
 
 class GenericAuthBackend(BaseAuthBackend):
-    """Generic authentication backend that uses the provided ``getter`` instance and
-    ``user_loader`` callable to retrieves the authentication information from the request
-    and authenticate the user.
+    """Generic authentication backend that delegates the verification of the authentication
+    information retried by the provided ``getter`` to the ``user_loader`` callable.
+
+    This backend can be used to quickly implement custom authentication schemes or as an adapter
+    to other authentication libraries.
 
     Depending on the ``getter`` provided, this backend can be used to authenticate the an user
     using a session cookie or using a parameter as token.
 
     Args:
         user_loader (Callable): A callable object that is called with the :class:`RequestAttributes`
-            object and the information extrected from the request using the provided ``getter``.
+            object and the information extracted from the request using the provided ``getter``.
             It should return the user identified by the request, or ``None`` if no user could be
             not found.
         getter (Getter): Getter used to extract the authentication information from the request.
@@ -120,7 +122,7 @@ class GenericAuthBackend(BaseAuthBackend):
     Keyword Args:
         payload_key (Optional[str], optional): It defines a key in the dict returned by the
             :meth:`authentication` method that will contain data obtained from the request by the
-            ``getter``. Defaults to ``None``.
+            ``getter``. Pass ``None`` to disable this functionality. Defaults to ``None``.
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
             use as the value of the WWW-Authenticate header in case of errors. Defaults to ``None``
     """
@@ -129,10 +131,11 @@ class GenericAuthBackend(BaseAuthBackend):
         self,
         user_loader: Callable,
         getter: Getter,
+        *,
         payload_key: Optional[str] = None,
         challenges: Optional[Iterable[str]] = None,
     ):
-        super().__init__(user_loader, challenges)
+        super().__init__(user_loader, challenges=challenges)
         check_getter(getter)
         if payload_key in {"backend", "user"}:
             raise ValueError(f"The payload_key cannot have value {payload_key}")
