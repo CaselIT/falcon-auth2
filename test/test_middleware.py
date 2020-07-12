@@ -63,7 +63,12 @@ class TestAuthMiddleware:
 
     def test_init_all(self):
         b = NoAuthBackend(lambda *args: {})
-        am = AuthMiddleware(b, ["/foo", "/bar", "/foo"], ["OPTIONS", "GET"], "bar")
+        am = AuthMiddleware(
+            b,
+            exempt_templates=["/foo", "/bar", "/foo"],
+            exempt_methods=["OPTIONS", "GET"],
+            context_attr="bar",
+        )
 
         assert am.backend is b
         assert am.context_attr == "bar"
