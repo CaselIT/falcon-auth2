@@ -109,15 +109,15 @@ Notifies when another backend has success and/or fails to authenticate a request
 Backend used to combine multiple authentication backends.
 This backend successfully authenticates a request if one of the provided backends can authenticate the request.
 
-## Thanks
-
-This package was inspired by [falcon-auth](https://github.com/loanzen/falcon-auth) and [falcon-authentication](https://github.com/jcwilson/falcon-authentication) packages.
-
 ## About Falcon
 
 [Falcon](https://falconframework.org) is the minimalist web API framework
 for building reliable, correct, and high-performance REST APIs, microservices,
 proxies, and app backends in Python.
+
+## Thanks
+
+This package was inspired by [falcon-auth](https://github.com/loanzen/falcon-auth) and [falcon-authentication](https://github.com/jcwilson/falcon-authentication) packages.
 
 ## License
 
