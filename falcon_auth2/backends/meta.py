@@ -8,23 +8,26 @@ from .base import AuthBackend
 
 
 class CallBackBackend(AuthBackend):
-    """Meta-Backend used to notify the application when another backend has success and/or fails to
-    authenticate a request.
+    """Meta-Backend used to notify when another backend has success and/or fails to authenticate
+    a request.
 
     This backend delegates all the authentication actions to the provided ``backend``.
 
     Args:
-        backend (AuthBackend): The backend that will be used to authenticate the users.
+        backend (AuthBackend): The backend that will be used to authenticate the requests.
     Keyword Args:
-        on_success (Optional[Callable], optional): Callable function that will be invoked with the
-            :class:`RequestAttributes`, the backend and the authentication result after a successful
-            request authentication. Defaults to None.
-        on_failure (Optional[Callable], optional): Callable function that will be invoked with the
-            :class:`RequestAttributes`, the backend and the raised exception after a failed
-            request authentication. Defaults to None.
+        on_success (Optional[Callable], optional): Callable object that will be invoked with the
+            :class:`~.RequestAttributes`, the ``backend`` and the authentication result (the dict
+            that will be placed in the request context by the middleware) after a successful
+            request authentication. Defaults to ``None``.
+        on_failure (Optional[Callable], optional): Callable object that will be invoked with the
+            :class:`~.RequestAttributes`, the ``backend`` and the raised exception after a failed
+            request authentication. Defaults to ``None``.
 
             Note:
-                This method cannot be used to suppress the exception raised by ``backend``
+                This method cannot be used to suppress the exception raised by the ``backend``
+                that will be propagated after the invocation ends, but the callable can choose
+                to raise a different exception instead.
     """
 
     def __init__(
@@ -61,23 +64,26 @@ class CallBackBackend(AuthBackend):
 class MultiAuthBackend(AuthBackend):
     """Meta-Backend used to combine multiple authentication backends.
 
-    This backend successfully authenticates a request if one of the probided backends can
-    authenticate the request; raises ``BackendNotApplicable`` if no backend can authenticate it.
+    This backend successfully authenticates a request if one of the provided backends can
+    authenticate the request or raises :class:`~.BackendNotApplicable` if no backend can
+    authenticate it.
 
     This backend delegates all the authentication actions to the provided ``backends``.
 
     Args:
         backends (Iterable[AuthBackend]): The backends to use. They will be used in order.
     Keyword Args:
-        continue_on (Callable): A callable object that is called when a backend raises an exception
-            and returns ``True`` if processing should continue or ``False`` if it should stop by
-            re-raising the backend exception. The callable takes two arguments: the backend and the
-            raised exception. The default implementation continues returns ``True`` if any backend
-            raises ``BackendNotApplicable``.
+        continue_on (Callable): A callable object that is called when a backend raises an exception.
+            It should return ``True`` if processing should continue to the next backend or
+            ``False`` if it should stop by re-raising the backend exception.
+            The callable takes the backend and the raised exception as parameters.
+            The default implementation continues processing if any backend raises a
+            :class:`~.BackendNotApplicable` exception.
 
             Note:
-                This callable is only called if a backend raises an instance of ``HTTPUnauthorized``
-                of one of it's subclasses. All other exception types are propagated.
+                This callable is only invoked if a backend raises an instance of
+                ``HTTPUnauthorized`` or one of it's subclasses. All other exception types
+                are propagated.
     """
 
     def __init__(self, backends: Iterable[AuthBackend], *, continue_on: Optional[Callable] = None):

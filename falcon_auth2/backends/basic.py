@@ -13,29 +13,35 @@ class BasicAuthBackend(BaseAuthBackend):
     """Implements the `'Basic' HTTP Authentication Scheme <https://tools.ietf.org/html/rfc7617>`_.
 
     Clients should authenticate by passing the credential in the format ``username:password``
-    encoded in ``base64`` in the ``Authorization`` HTTP header, prepended with the
-    type specified in the setting ``auth_header_type``. For example the user Aladdin would provide
-    is password, ``'open sesame'`` as:
+    encoded in ``base64`` in the ``Authorization`` HTTP header, prepending it with the
+    type specified in the setting ``auth_header_type``.
+    For example, the user ``"Aladdin"`` would provide his password, ``"open sesame"``, with the
+    header::
 
         Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
 
     Args:
-        user_loader (Callable): A callable object that is called with the :class:`RequestAttributes`
-            object and the credential (username and password) extracted from the request using the
-            provided ``getter``. It should return the user identified by the request, or ``None``
-            if no user could be not found.
-    Keyword Args:
-        auth_header_type (string, optional): The type of authentication required in the
-            `Authorization` header. This value is added to the ``challenges`` in case of errors.
-            Defaults to ``Basic``.
+        user_loader (Callable): A callable object that is called with the
+            :class:`~RequestAttributes` object and the username and password credentials
+            extracted from the request using the provided ``getter``. It should return the user
+            identified by the request, or ``None`` if no user could be not found.
 
             Note:
-                When using a custom getter this value is only used to generate the ``challenges``,
+                Exception raised in this callable are not handled directly, and are surfaced to
+                falcon.
+    Keyword Args:
+        auth_header_type (string, optional): The type of authentication required in the
+            ``Authorization`` header. This value is added to the ``challenges`` in case of errors.
+            Defaults to ``"Basic"``.
+
+            Note:
+                When passing a custom getter this value is only used to generate the ``challenges``,
                 since the getter will be used to obtain the credentials to authenticate.
         getter (Optional[Getter]): Getter used to extract the authentication information from the
             request. When using a custom getter, the returned value must be a ``base64`` encoded
             string with the credentials in the format ``username:password``.
-            Defaults to ``AuthHeaderGetter`` initialized with the provided ``auth_header_type``.
+            Defaults to :class:`~.AuthHeaderGetter` initialized with the provided
+            ``auth_header_type``.
     """
 
     def __init__(

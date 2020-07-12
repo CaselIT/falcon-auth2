@@ -15,14 +15,14 @@ class AuthMiddleware:
     A backend may also store additional information in this dict.
 
     This middleware supports a global authentication configuration using provided
-    :class:`AuthBackend`, as well as per resource configuration.
+    :class:`.AuthBackend`, as well as per resource configuration.
     To override the authentication configuration a resource can specify an optional ``auth``
     attribute the override properties. The ``auth`` attribute is a dict that can specify the keys:
 
         * ``auth_disabled`` boolean. ``True`` disables the authentication on the resource.
         * ``exempt_methods`` iterable that overrides the global ``exempt_methods`` for the resource.
         * ``backend`` backend instace that overrides the globally configured backend used to
-            handle the authentication of the request.
+          handle the authentication of the request.
 
     Args:
         backend (AuthBackend): The default auth backend to be used to authenticate requests.

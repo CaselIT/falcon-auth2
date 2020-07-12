@@ -7,14 +7,15 @@ from .exc import BackendNotApplicable
 
 
 class Getter(metaclass=ABCMeta):
-    """Base getter class, that defined the interface for the getters."""
+    """Represents a class that extracts authentication information from a request."""
 
     @abstractmethod
     def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the specified attribute from the provided request.
 
-        The ``challenges``, when provided, will be added to ``WWW-Authenticate`` header in case
-        of error.
+        If a getter cannot be used with the current request, a :class:`~.BackendNotApplicable`
+        is raised. The ``challenges``, when provided, will be added to ``WWW-Authenticate`` header
+        in case of error.
 
         Args:
             req (Request): The current request.
@@ -28,7 +29,7 @@ class Getter(metaclass=ABCMeta):
 
 
 class HeaderGetter(Getter):
-    """Gets the specified header from the request.
+    """Returns the specified header from a request.
 
     Args:
         header_key (str): the name of the header to load.
@@ -48,22 +49,22 @@ class HeaderGetter(Getter):
 
 
 class AuthHeaderGetter(HeaderGetter):
-    """Get the auth header from the request, checking that it in the form
+    """Returns the auth header from a request, checking that it in the form
     ``<auth_header_type> value``.
 
     Args:
-        auth_header_type (str): The type of the auth header. Common values are ``Basic``,
-            ``Bearer``.
+        auth_header_type (str): The type of the auth header. Common values are ``"Basic"``,
+            ``"Bearer"``.
     Keyword Args:
-        header_key (str, optional): The name of the header to load. Defaults to "Authorization".
+        header_key (str, optional): The name of the header to load. Defaults to ``"Authorization"``.
     """
 
-    def __init__(self, auth_header_type: str, header_key: str = "Authorization"):
+    def __init__(self, auth_header_type: str, *, header_key: str = "Authorization"):
         super().__init__(header_key)
         self.auth_header_type = auth_header_type.casefold()
 
     def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
-        """Loads the header from the provided request"""
+        """Loads the auth header from the provided request"""
         prefix, _, value = super().load(req, challenges=challenges).partition(" ")
         if prefix.casefold() != self.auth_header_type:
             raise BackendNotApplicable(
@@ -87,12 +88,14 @@ class AuthHeaderGetter(HeaderGetter):
 
 
 class ParamGetter(Getter):
-    """Gets the specified parameter from the request.
+    """Returns the specified parameter from the request.
 
-    NOTE: If the parameter appears multiple times an error will be raised.
+    If the parameter appears multiple times an error will be raised.
 
-    NOTE: When :py:attr:`falcon.Request.RequestOptions.auto_parse_form_urlencoded` is set to
-    ``True``, this getter can also retrieve parameter in the body of a form-urlencoded request.
+    Note:
+        When the falcon ``Request`` option ``RequestOptions.auto_parse_form_urlencoded`` is set
+        to ``True``, this getter can also retrieve parameter in the body of a
+        ``form-urlencoded`` request.
 
     Args:
         param_name (str): the name of the param to load.
@@ -118,9 +121,9 @@ class ParamGetter(Getter):
 
 
 class CookieGetter(Getter):
-    """Gets the specified cookie from the request.
+    """Returns the specified cookie from the request.
 
-    NOTE: If the cookie appears multiple times an error will be raised.
+    If the cookie appears multiple times an error will be raised.
 
     Args:
         cookie_name (str): the name of the cookie to load.
@@ -147,14 +150,15 @@ class CookieGetter(Getter):
 
 class MultiGetter(Getter):
     """Combines multiple getters. This is useful if a value can be passed in multiple ways
-    to the server, like using an header of a query parameter.
+    to the server, like using an header or a query parameter.
 
-    NOTE: The first valid value is returned. Wrong values are ignored and an exception will
-    only be raised if no getter can return a valid value.
+    Will use the first value successfully returned, ignoring all :class:`~.BackendNotApplicable`
+    exceptions raised by the previously tried getters. If no getter can return a valid value
+    an exception will only be raised.
 
     Args:
-        getter (Iterable[Getter]): The getters to use. They will be tried in order and the first
-            matching value is returned.
+        getters (Iterable[Getter]): The getters to use. They will be tried in order and the first
+            value successfully returned is used.
     """
 
     def __init__(self, getters: Iterable[Getter]):
