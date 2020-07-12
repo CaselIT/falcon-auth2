@@ -17,7 +17,7 @@ class BackendNotApplicable(HTTPUnauthorized):
 
 
 class UserNotFound(HTTPUnauthorized):
-    """Raised when ``user_loader`` callable of an authentication backend cannot load an user
+    """Raised when the ``user_loader`` callable of an authentication backend cannot load an user
     with the received payload.
     This may indicate that the request is intended for another backend.
 

@@ -7,46 +7,49 @@ from ..utils import RequestAttributes, check_getter
 
 
 class AuthBackend(metaclass=ABCMeta):
-    """Base class that defines the signature of the :meth:`authenticate`.
+    """Base class that defines the signature of the :meth:`authenticate` method.
 
-    Backend must subclass of this class to be used by the application.
+    Backend must subclass of this class to be used by the :class:`~.AuthMiddleware` middleware.
     """
 
     @abstractmethod
     def authenticate(self, attributes: RequestAttributes) -> dict:
         """Authenticates the request and returns the authenticated user.
 
-        A backend should raise an :class:`AuthenticationFailure` exception to indicate that the
-        request can be handled by this backend, but the authentication fails.
-        It should instead raise :class:`BackendNotApplicable` if the provided request cannot be
-        handled by this backend and :class:`UserNotFound` when no user could be loaded with the
-        provided credentials.
+        If a request cannot be authenticated a backed should raise:
+
+        * :class:`~.AuthenticationFailure` to indicate that the request can be handled by this
+          backend, but the authentication fails.
+        * :class:`~.BackendNotApplicable` if the provided request cannot be handled by this backend.
+          This is usually raised by the :class:`~.Getter` used by the backend to process the
+          request.
+        * :class:`~.UserNotFound` when no user could be loaded with the provided credentials.
 
         Args:
             attributes (RequestAttributes): The current request attributes. It's a named tuple
-                which contains the falcon request and response objects, the resource activate
-                and the parameter matched in the url.
+                which contains the falcon request and response objects, the activated resource
+                and the parameters matched in the url.
 
         Returns:
             dict: A dictionary with a required ``"user"`` key containing the authenticated
-                user. This dictionary may optionally contain additional keys specific to this
-                backend. If the ``"backend"`` key is specified, the middleware will not override it.
+            user. This dictionary may optionally contain additional keys specific to this
+            backend. If the ``"backend"`` key is specified, the middleware will not override it.
         """
 
 
 class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
-    """Utility class that handles calling a provided function to load an user from the
-    request authentication information in the :meth:`load_user`.
+    """Utility class that handles calling a provided callable to load an user from the
+    authentication information of the request in the :meth:`load_user` method.
 
     Args:
-        user_loader (Callable): A callable object that is called with the :class:`RequestAttributes`
-            object as well as any relevant data extracted from the request by the backend. The
-            arguments passed to ``user_loader`` will vary depending on the class:`AuthBackend`.
-            It should return the user identified by the request, or ``None`` if no user could be
-            not found.
+        user_loader (Callable): A callable object that is called with the
+            :class:`~.RequestAttributes` object as well as any relevant data extracted from
+            the request by the backend. The arguments passed to ``user_loader`` will vary
+            depending on the :class:`AuthBackend`. It should return the user identified by
+            the request, or ``None`` if no user could be not found.
 
             Note:
-                Exception raised in this function are not handled directly, and are surfaced to
+                Exception raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
@@ -62,17 +65,17 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
         self.challenges = tuple(challenges) if challenges else None
 
     def load_user(self, attributes: RequestAttributes, *args, **kwargs) -> Any:
-        """Invoke the provided ``user_loader()`` callable to allow the app to retrieve
-        the user record. If no such record is found, raises a :class:`UserNotFound`
+        """Invokes the provided ``user_loader`` callable to allow the app to retrieve
+        the user record. If no such record is found, raises a :class:`~.UserNotFound`
         exception.
 
         Args:
             attributes (RequestAttributes): The request attributes.
-            *args: Positional arguments to pass to the ``user_loader()`` callable.
-            **kwargs: Keyword arguments to pass to the ``user_loader()`` callable.
+            \\*args: Positional arguments to pass to the ``user_loader`` callable.
+            \\*\\*kwargs: Keyword arguments to pass to the ``user_loader`` callable.
 
         Returns:
-            Any: The loaded user object.
+            Any: The loaded user object returned by ``user_loader``.
         """
         user = self.user_loader(attributes, *args, **kwargs)
         if not user:
@@ -86,11 +89,18 @@ class NoAuthBackend(BaseAuthBackend):
     """No authentication backend.
 
     This backend does not perform any authentication check. It can be used with the
-    :class:`MultiAuthBackend` in order to provide a fallback for an unauthenticated user.
+    :class:`~.MultiAuthBackend` in order to provide a fallback for an unauthenticated user or to
+    implement a complitely custom authentication workflow.
 
     Args:
-        user_loader (Callable): A callable object that is called with the :class:`RequestAttributes`
-            object and returns a default unauthenticated user.
+        user_loader (Callable): A callable object that is called with the
+            :class:`~.RequestAttributes` object and returns a default unauthenticated user (
+            alternatively the user identified by a custom authentication workflow) or ``None``
+            if no user could be not found.
+
+            Note:
+                Exception raised in this callable are not handled directly, and are surfaced to
+                falcon.
     Keyword Args:
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
             use as the value of the ``WWW-Authenticate`` header in case of errors.
@@ -104,7 +114,8 @@ class NoAuthBackend(BaseAuthBackend):
 
 class GenericAuthBackend(BaseAuthBackend):
     """Generic authentication backend that delegates the verification of the authentication
-    information retried by the provided ``getter`` to the ``user_loader`` callable.
+    information retried from the request by the provided ``getter`` to the ``user_loader``
+    callable.
 
     This backend can be used to quickly implement custom authentication schemes or as an adapter
     to other authentication libraries.
@@ -113,18 +124,23 @@ class GenericAuthBackend(BaseAuthBackend):
     using a session cookie or using a parameter as token.
 
     Args:
-        user_loader (Callable): A callable object that is called with the :class:`RequestAttributes`
-            object and the information extracted from the request using the provided ``getter``.
-            It should return the user identified by the request, or ``None`` if no user could be
-            not found.
+        user_loader (Callable): A callable object that is called with the
+            :class:`~.RequestAttributes` object and the information extracted from the request
+            using the provided ``getter``. It should return the user identified by the request,
+            or ``None`` if no user could be not found.
+
+            Note:
+                Exception raised in this callable are not handled directly, and are surfaced to
+                falcon.
         getter (Getter): Getter used to extract the authentication information from the request.
-            The returned values is passed to the user_loader callable.
+            The returned value is passed to the ``user_loader`` callable.
     Keyword Args:
         payload_key (Optional[str], optional): It defines a key in the dict returned by the
             :meth:`authentication` method that will contain data obtained from the request by the
-            ``getter``. Pass ``None`` to disable this functionality. Defaults to ``None``.
+            ``getter``. Use ``None`` to disable this functionality. Defaults to ``None``.
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
-            use as the value of the WWW-Authenticate header in case of errors. Defaults to ``None``
+            use as the value of the ``WWW-Authenticate`` header in case of errors.
+            Defaults to ``None``.
     """
 
     def __init__(

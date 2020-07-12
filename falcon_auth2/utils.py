@@ -4,16 +4,18 @@ from falcon import Request, Response
 
 
 class RequestAttributes(NamedTuple):
-    """Named tuple that is passed to the backend when a request is performed"""
+    """Named tuple that is passed to the backend :meth:`~.AuthBackend.authenticate` when a
+    request is performed.
+    """
 
     req: Request
-    "The falcon request"
+    "The falcon request."
     resp: Response
-    "The falcon response"
+    "The falcon response."
     resource: Any
-    "The falcon responder resource"
+    "The falcon responder resource."
     params: dict
-    "The parameters of passed in the url"
+    "The parameters of passed in the url."
 
 
 def check_backend(backend: Any):
