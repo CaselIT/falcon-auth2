@@ -10,7 +10,7 @@ def make_request(**kw):
 
 def check_challenges(getter, req, err, match, challenges):
     with pytest.raises(BackendNotApplicable, match=match) as err:
-        getter.load(req, challenges)
+        getter.load(req, challenges=challenges)
     if not challenges:
         assert err.value.headers is None or "WWW-Authenticate" not in err.value.headers
     else:

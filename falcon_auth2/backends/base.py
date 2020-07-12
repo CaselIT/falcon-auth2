@@ -145,7 +145,7 @@ class GenericAuthBackend(BaseAuthBackend):
 
     def authenticate(self, attributes: RequestAttributes) -> dict:
         "Authenticates the request and returns the authenticated user."
-        auth_data = self.getter.load(attributes[0], self.challenges)
+        auth_data = self.getter.load(attributes[0], challenges=self.challenges)
         result = {"user": self.load_user(attributes, auth_data)}
         if self.payload_key is not None:
             result[self.payload_key] = auth_data

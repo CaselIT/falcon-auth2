@@ -52,7 +52,7 @@ class BasicAuthBackend(BaseAuthBackend):
         self.getter = getter or AuthHeaderGetter(auth_header_type)
 
     def _extract_credentials(self, req: Request):
-        auth_data = self.getter.load(req, self.challenges)
+        auth_data = self.getter.load(req, challenges=self.challenges)
         try:
             auth_data = base64.b64decode(auth_data).decode("utf-8")
             username, password = auth_data.split(":", 1)

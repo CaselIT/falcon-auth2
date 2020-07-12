@@ -9,7 +9,7 @@ class AuthenticationFailure(HTTPUnauthorized):
 
 
 class BackendNotApplicable(HTTPUnauthorized):
-    """Raised when the syntax of a request is not understood by an authentication backend.
+    """Raised when a request is not understood by an authentication backend.
     This may indicate that the request is intended for another backend.
 
     This will terminate the request with status 401 if no other logic is present.

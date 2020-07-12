@@ -10,7 +10,7 @@ class Getter(metaclass=ABCMeta):
     """Base getter class, that defined the interface for the getters."""
 
     @abstractmethod
-    def load(self, req: Request, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the specified attribute from the provided request.
 
         The ``challenges``, when provided, will be added to ``WWW-Authenticate`` header in case
@@ -37,7 +37,7 @@ class HeaderGetter(Getter):
     def __init__(self, header_key: str):
         self.header_key = header_key
 
-    def load(self, req: Request, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the header from the provided request"""
         header_value = req.get_header(self.header_key)
         if not header_value:
@@ -62,9 +62,9 @@ class AuthHeaderGetter(HeaderGetter):
         super().__init__(header_key)
         self.auth_header_type = auth_header_type.casefold()
 
-    def load(self, req: Request, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the header from the provided request"""
-        prefix, _, value = super().load(req, challenges).partition(" ")
+        prefix, _, value = super().load(req, challenges=challenges).partition(" ")
         if prefix.casefold() != self.auth_header_type:
             raise BackendNotApplicable(
                 description=f"Invalid {self.header_key} header: Must "
@@ -101,7 +101,7 @@ class ParamGetter(Getter):
     def __init__(self, param_name: str):
         self.param_name = param_name
 
-    def load(self, req: Request, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the parameter from the provided request"""
         param_value = req.get_param_as_list(self.param_name)
         if not param_value:
@@ -129,7 +129,7 @@ class CookieGetter(Getter):
     def __init__(self, cookie_name: str):
         self.cookie_name = cookie_name
 
-    def load(self, req: Request, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the cookie from the provided request"""
         cookie_value = req.get_cookie_values(self.cookie_name)
         if not cookie_value:
@@ -164,7 +164,7 @@ class MultiGetter(Getter):
         if any(not isinstance(g, Getter) for g in self.getters):
             raise TypeError("All getter must inherit from Getter")
 
-    def load(self, req: Request, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the value from the provided request using the provided getters"""
         for p in self.getters:
             try:
