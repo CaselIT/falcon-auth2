@@ -55,7 +55,7 @@ class TestAuthHeaderGetter:
         req = make_request(headers={"Authorization": "foo bar"})
         assert g.load(req) == "bar"
 
-        g = getter.AuthHeaderGetter("bar", "foo")
+        g = getter.AuthHeaderGetter("bar", header_key="foo")
         req = make_request(headers={"foo": "bar baz", "bar": "foo"})
         assert g.load(req) == "baz"
 

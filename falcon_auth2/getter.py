@@ -58,7 +58,7 @@ class AuthHeaderGetter(HeaderGetter):
         header_key (str, optional): The name of the header to load. Defaults to "Authorization".
     """
 
-    def __init__(self, auth_header_type: str, header_key: str = "Authorization"):
+    def __init__(self, auth_header_type: str, *, header_key: str = "Authorization"):
         super().__init__(header_key)
         self.auth_header_type = auth_header_type.casefold()
 
