@@ -6,7 +6,7 @@
 
 Falcon authentication middleware that supports multiple authentication schemes. 
 
-## Installation
+## Install
 
 ```sh
 $ pip install falcon-auth2
