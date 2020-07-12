@@ -103,3 +103,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+publish.ps1
