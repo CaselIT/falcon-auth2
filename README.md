@@ -1,4 +1,4 @@
-# falcon-auth
+# falcon-auth2
 
 [![build](https://github.com/CaselIT/falcon-auth2/workflows/Run%20tests/badge.svg)](https://github.com/CaselIT/falcon-auth2/actions?query=workflow%3A%22Run+tests%22)
 [![pypi](https://img.shields.io/pypi/v/falcon-auth2.svg)](https://pypi.python.org/pypi/falcon-auth2)
