@@ -5,7 +5,7 @@ from falcon import Request
 
 from ..exc import BackendNotApplicable
 from ..getter import AuthHeaderGetter, Getter
-from ..utils import RequestAttributes, check_getter
+from ..utils import RequestAttributes, await_, check_getter
 from .base import BaseAuthBackend
 
 
@@ -57,8 +57,12 @@ class BasicAuthBackend(BaseAuthBackend):
         self.auth_header_type = auth_header_type
         self.getter = getter or AuthHeaderGetter(auth_header_type)
 
-    def _extract_credentials(self, req: Request):
-        auth_data = self.getter.load(req, challenges=self.challenges)
+    def _extract_credentials(self, req: Request, is_async: bool):
+        if is_async and not self.getter.async_calls_sync_load:
+            auth_data = await_(self.getter.load_async(req, challenges=self.challenges))
+        else:
+            auth_data = self.getter.load(req, challenges=self.challenges)
+
         try:
             auth_data = base64.b64decode(auth_data).decode("utf-8")
             username, password = auth_data.split(":", 1)
@@ -72,5 +76,5 @@ class BasicAuthBackend(BaseAuthBackend):
 
     def authenticate(self, attributes: RequestAttributes) -> dict:
         "Authenticates the request and returns the authenticated user."
-        username, password = self._extract_credentials(attributes[0])
+        username, password = self._extract_credentials(attributes[0], attributes[-1])
         return {"user": self.load_user(attributes, username, password)}
