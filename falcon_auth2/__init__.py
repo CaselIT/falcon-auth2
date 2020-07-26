@@ -4,4 +4,4 @@ from .getter import AuthHeaderGetter, CookieGetter, Getter, HeaderGetter, MultiG
 from .middleware import AuthMiddleware
 from .utils import RequestAttributes
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
