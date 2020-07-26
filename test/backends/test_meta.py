@@ -11,10 +11,9 @@ from falcon_auth2.backends import (
     MultiAuthBackend,
     NoAuthBackend,
 )
-from falcon_auth2.compat import falcon2
 
 from .conftest import ResourceFixture, create_app_backend
-from .test_basic import find_user
+from .test_basic import basic_auth_token, find_user
 
 nab = NoAuthBackend(lambda x: None)
 
@@ -55,7 +54,7 @@ class TestCallBackBackend(ResourceFixture):
             assert res.status == falcon.HTTP_OK
             assert res.text == str(no_user)
 
-        def test_ok(self, backend, no_user, client):
+        def test_ok(self, backend, no_user, client, resource):
             canary = []
 
             def success(attr, b, result):
@@ -71,6 +70,27 @@ class TestCallBackBackend(ResourceFixture):
             assert res.status == falcon.HTTP_OK
             assert res.text == str(no_user)
             assert canary == [1]
+            assert isinstance(resource.context["backend"], NoAuthBackend)
+
+        def test_async_success(self, client, backend, asgi):
+            canary = []
+
+            async def on_success(a, b, r):
+                canary.append(1)
+                return None
+
+            backend.on_success = on_success
+
+            for _ in range(3):
+                canary.clear()
+                res = client.simulate_get("/auth")
+                if asgi:
+                    assert canary == [1]
+                    assert res.status == falcon.HTTP_OK
+                else:
+                    assert canary == []
+                    assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                    assert "Cannot use async on success" in res.json["description"]
 
     class TestErr:
         @pytest.fixture
@@ -98,6 +118,26 @@ class TestCallBackBackend(ResourceFixture):
             assert res.status == falcon.HTTP_UNAUTHORIZED
             assert "User not found " in res.text
             assert canary == [1]
+
+        def test_async_success(self, client, backend, asgi):
+            canary = []
+
+            async def on_failure(a, b, r):
+                canary.append(1)
+                return None
+
+            backend.on_failure = on_failure
+
+            for _ in range(3):
+                canary.clear()
+                res = client.simulate_get("/auth")
+                if asgi:
+                    assert canary == [1]
+                    assert res.status == falcon.HTTP_UNAUTHORIZED
+                else:
+                    assert canary == []
+                    assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                    assert "Cannot use async on failure" in res.json["description"]
 
 
 class CustomBackend(AuthBackend):
@@ -139,7 +179,7 @@ class TestWithMultiBackendAuth(ResourceFixture):
             continue_on=continue_on,
         )
 
-    def test_default(self, no_user, backend, resource):
+    def test_ok(self, no_user, backend, resource, asgi):
         canary = []
 
         def on_success(attr, backend, results):
@@ -148,7 +188,7 @@ class TestWithMultiBackendAuth(ResourceFixture):
             assert results["user"] is no_user
 
         app = create_app_backend(
-            lambda: CallBackBackend(backend(), on_success=on_success), resource
+            lambda: CallBackBackend(backend(), on_success=on_success), resource, asgi
         )
         client = testing.TestClient(app)
         # CustomBackend replies
@@ -156,8 +196,19 @@ class TestWithMultiBackendAuth(ResourceFixture):
         assert res.status == falcon.HTTP_OK
         assert res.text == str(no_user)
         assert canary == [1]
+        assert isinstance(resource.context["backend"], CustomBackend)
 
-    def test_custom_continue(self, no_user, backend, resource):
+    def test_ok2(self, user_dict, client, backend, resource, asgi):
+        user = user_dict["3"]
+        # BasicAuthBackend replies
+        res = client.simulate_post(
+            "/auth", headers={"Authorization": basic_auth_token(user.user, user.pwd)}
+        )
+        assert res.status == falcon.HTTP_OK
+        assert res.text == str(user)
+        assert isinstance(resource.context["backend"], BasicAuthBackend)
+
+    def test_custom_continue(self, no_user, backend, resource, asgi):
         canary = []
 
         # fail on basic auth backend not applicable
@@ -169,29 +220,18 @@ class TestWithMultiBackendAuth(ResourceFixture):
             return len(canary) < 2
 
         multi = backend(continue_on)
-        app = create_app_backend(lambda: multi, resource)
+        app = create_app_backend(lambda: multi, resource, asgi)
         client = testing.TestClient(app)
         res = client.simulate_post("/auth")
         assert res.status == falcon.HTTP_UNAUTHORIZED
 
-    def test_other_exception(self, backend, resource):
-        app = create_app_backend(backend, resource)
-        if falcon2:
-
-            def handle(req, resp, ex, params):
-                raise falcon.HTTPInternalServerError()
-
-            app.add_error_handler(Exception, handle)
-
-        client = testing.TestClient(app)
+    def test_other_exception(self, client, asgi):
         CustomBackend.exc = TypeError("some exception")
         res = client.simulate_post("/auth")
         assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
 
-    def test_auth_failure(self, backend, resource):
+    def test_auth_failure(self, client):
         # fail with AuthenticationFailure
-        app = create_app_backend(backend, resource)
-        client = testing.TestClient(app)
         CustomBackend.exc = exc.AuthenticationFailure(description="CustomBackend")
         res = client.simulate_post("/auth")
         assert res.status == falcon.HTTP_UNAUTHORIZED

@@ -6,7 +6,7 @@ import pytest
 from falcon_auth2 import AuthHeaderGetter, ParamGetter, RequestAttributes
 from falcon_auth2.backends import BasicAuthBackend
 
-from .conftest import ResourceFixture
+from .conftest import ConfigurableGetter, ResourceFixture
 
 
 def basic_auth_token(user, pwd, prefix="Basic"):
@@ -127,3 +127,44 @@ class TestBasicAuth(ResourceFixture):
         req = client.simulate_get("/auth", headers={"Authorization": token})
         assert req.status == falcon.HTTP_UNAUTHORIZED
         assert req.headers.get("WWW-Authenticate") == "bar"
+
+    def test_async_loader(self, client, backend, asgi):
+        async def async_loader(a, u, p):
+            return None
+
+        backend.user_loader = async_loader
+
+        for _ in range(3):
+            res = client.simulate_get(
+                "/auth", headers={"Authorization": basic_auth_token("a", "b")}
+            )
+            if asgi:
+                assert res.status == falcon.HTTP_UNAUTHORIZED
+            else:
+                assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                assert "Cannot use async user loader" in res.json["description"]
+
+    def test_async_getter(self, client, backend, asgi, user_dict):
+        backend.getter = ConfigurableGetter(
+            basic_auth_token(user_dict["2"].user, user_dict["2"].pwd).partition(" ")[-1],
+            basic_auth_token(user_dict["3"].user, user_dict["3"].pwd).partition(" ")[-1],
+            False,
+        )
+
+        req = client.simulate_post("/auth", headers={"Authorization": basic_auth_token("a", "b")})
+        assert req.status == falcon.HTTP_OK
+        if asgi:
+            assert req.text == str(user_dict["3"])
+        else:
+            assert req.text == str(user_dict["2"])
+
+    def test_async_getter_call_sync(self, client, backend, asgi, user_dict):
+        backend.getter = ConfigurableGetter(
+            basic_auth_token(user_dict["2"].user, user_dict["2"].pwd).partition(" ")[-1],
+            basic_auth_token(user_dict["3"].user, user_dict["3"].pwd).partition(" ")[-1],
+            True,
+        )
+
+        req = client.simulate_post("/auth", headers={"Authorization": basic_auth_token("a", "b")})
+        assert req.status == falcon.HTTP_OK
+        assert req.text == str(user_dict["2"])

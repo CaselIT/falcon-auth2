@@ -5,7 +5,7 @@ from falcon import Request
 
 from ..exc import BackendNotApplicable
 from ..getter import AuthHeaderGetter, Getter
-from ..utils import RequestAttributes, check_getter
+from ..utils import RequestAttributes, await_, check_getter
 from .base import BaseAuthBackend
 
 
@@ -25,9 +25,14 @@ class BasicAuthBackend(BaseAuthBackend):
             :class:`~RequestAttributes` object and the username and password credentials
             extracted from the request using the provided ``getter``. It should return the user
             identified by the request, or ``None`` if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
+
+            Note:
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         auth_header_type (string, optional): The type of authentication required in the
@@ -57,8 +62,12 @@ class BasicAuthBackend(BaseAuthBackend):
         self.auth_header_type = auth_header_type
         self.getter = getter or AuthHeaderGetter(auth_header_type)
 
-    def _extract_credentials(self, req: Request):
-        auth_data = self.getter.load(req, challenges=self.challenges)
+    def _extract_credentials(self, req: Request, is_async: bool):
+        if is_async and not self.getter.async_calls_sync_load:
+            auth_data = await_(self.getter.load_async(req, challenges=self.challenges))
+        else:
+            auth_data = self.getter.load(req, challenges=self.challenges)
+
         try:
             auth_data = base64.b64decode(auth_data).decode("utf-8")
             username, password = auth_data.split(":", 1)
@@ -72,5 +81,5 @@ class BasicAuthBackend(BaseAuthBackend):
 
     def authenticate(self, attributes: RequestAttributes) -> dict:
         "Authenticates the request and returns the authenticated user."
-        username, password = self._extract_credentials(attributes[0])
+        username, password = self._extract_credentials(attributes[0], attributes[-1])
         return {"user": self.load_user(attributes, username, password)}

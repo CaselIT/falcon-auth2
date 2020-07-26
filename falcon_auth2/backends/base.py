@@ -3,7 +3,7 @@ from typing import Any, Callable, Iterable, Optional
 
 from ..exc import UserNotFound
 from ..getter import Getter
-from ..utils import RequestAttributes, check_getter
+from ..utils import RequestAttributes, await_, call_maybe_async, check_getter
 
 
 class AuthBackend(metaclass=ABCMeta):
@@ -47,9 +47,14 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             the request by the backend. The arguments passed to ``user_loader`` will vary
             depending on the :class:`AuthBackend`. It should return the user identified by
             the request, or ``None`` if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
+
+            Note:
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
@@ -62,6 +67,7 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             raise TypeError(f"Expected {user_loader} to be a callable object")
 
         self.user_loader = user_loader
+        self.user_loader_is_async = None
         self.challenges = tuple(challenges) if challenges else None
 
     def load_user(self, attributes: RequestAttributes, *args, **kwargs) -> Any:
@@ -77,7 +83,16 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
         Returns:
             Any: The loaded user object returned by ``user_loader``.
         """
-        user = self.user_loader(attributes, *args, **kwargs)
+        is_async = attributes[4]
+        user, self.user_loader_is_async = call_maybe_async(
+            is_async,
+            self.user_loader_is_async,
+            "user loader",
+            self.user_loader,
+            attributes,
+            *args,
+            **kwargs,
+        )
         if not user:
             raise UserNotFound(
                 description="User not found for provided payload", challenges=self.challenges
@@ -97,9 +112,14 @@ class NoAuthBackend(BaseAuthBackend):
             :class:`~.RequestAttributes` object and returns a default unauthenticated user (
             alternatively the user identified by a custom authentication workflow) or ``None``
             if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
+
+            Note:
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
@@ -128,9 +148,14 @@ class GenericAuthBackend(BaseAuthBackend):
             :class:`~.RequestAttributes` object and the information extracted from the request
             using the provided ``getter``. It should return the user identified by the request,
             or ``None`` if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
+
+            Note:
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
         getter (Getter): Getter used to extract the authentication information from the request.
             The returned value is passed to the ``user_loader`` callable.
@@ -161,7 +186,11 @@ class GenericAuthBackend(BaseAuthBackend):
 
     def authenticate(self, attributes: RequestAttributes) -> dict:
         "Authenticates the request and returns the authenticated user."
-        auth_data = self.getter.load(attributes[0], challenges=self.challenges)
+        is_async = attributes[4]
+        if is_async and not self.getter.async_calls_sync_load:
+            auth_data = await_(self.getter.load_async(attributes[0], challenges=self.challenges))
+        else:
+            auth_data = self.getter.load(attributes[0], challenges=self.challenges)
         result = {"user": self.load_user(attributes, auth_data)}
         if self.payload_key is not None:
             result[self.payload_key] = auth_data

@@ -15,6 +15,9 @@ $ pip install falcon-auth2
 ## Usage
 
 This package provides a falcon middleware to authenticate incoming requests using the selected authentication backend. The middleware allows excluding some routes or method from authentication. After a successful authentication the middleware adds the user identified by the request to the ``request context``.
+When using falcon v3+, the middleware also supports async execution.
+
+See [readme_example](./examples/readme_example.py) and [readme_example_async](./examples/readme_example_async.py) for  complete examples.
 
 ```py
 import falcon
@@ -55,11 +58,13 @@ The middleware allows each resource to customize the backend used for authentica
 from falcon_auth2 import HeaderGetter
 from falcon_auth2.backends import GenericAuthBackend
 
-class OtherResource:
+def user_header_loader(attr, user_header):
+    # authenticate the user with the user_header
+    return user_header
+
+class GenericResource:
     auth = {
-        "backend": GenericAuthBackend(
-            user_loader=lambda attr, user_header: user_header, getter=HeaderGetter("User")
-        ),
+        "backend": GenericAuthBackend(user_header_loader, getter=HeaderGetter("User")),
         "exempt_methods": ["GET"],
     }
 
@@ -69,16 +74,16 @@ class OtherResource:
     def on_post(self, req, resp):
         resp.media = {"info": f"User header {req.context.auth['user']}"}
 
-app.add_route("/other", OtherResource())
+app.add_route("/generic", GenericResource())
 
 class NoAuthResource:
     auth = {"auth_disabled": True}
 
     def on_get(self, req, resp):
-        resp.media = "No auth in this resource"
+        resp.body = "No auth in this resource"
 
     def on_post(self, req, resp):
-        resp.media = "No auth in this resource"
+        resp.body = "No auth in this resource"
 
 app.add_route("/no-auth", NoAuthResource())
 

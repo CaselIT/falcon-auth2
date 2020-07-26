@@ -1,13 +1,39 @@
 from abc import ABCMeta, abstractmethod
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 from falcon import Request
 
+try:
+    from falcon.asgi import Request as AsyncRequest
+except ImportError:  # pragma: no cover
+    AsyncRequest = type(None)
+
 from .exc import BackendNotApplicable
+from .utils import await_, greenlet_spawn
 
 
 class Getter(metaclass=ABCMeta):
-    """Represents a class that extracts authentication information from a request."""
+    """Represents a class that extracts authentication information from a request.
+
+    Note:
+        Subclasses that wish to only support the :meth:`.load_async` method are also
+        required to override the :meth:`.load` method since it is defined as abstract.
+        In these cases the sync version may just raise an exception.
+    """
+
+    async_calls_sync_load = None
+    """Indicates if this Getter has an async load implementation that is not just a fallback to
+    sync :meth:`.load` method, like the default :meth:`.load_async` method.
+
+    This property is automatically set by the :class:`Getter` when a subclass is defined
+    (using ``__init_subclass__``) if not specified directly by a subclass
+    (by setting it to a valued different than ``None``).
+    """
+
+    def __init_subclass__(cls):
+        # Use dict instead of accessing it directly to properly control nested subclasses
+        if cls.__dict__.get("async_calls_sync_load") is None:
+            cls.async_calls_sync_load = cls.load_async == Getter.load_async
 
     @abstractmethod
     def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
@@ -18,7 +44,7 @@ class Getter(metaclass=ABCMeta):
         in case of error.
 
         Args:
-            req (Request): The current request.
+            req (Request): The current request. This may be a wsgi or an asgi falcon request.
         Keyword Args:
             challenges (Optional[Iterable[str]], optional): One or more authentication challenges
                 to use as the value of the ``WWW-Authenticate`` header in case of errors.
@@ -26,6 +52,13 @@ class Getter(metaclass=ABCMeta):
         Returns:
             str: The loaded data, in case of success.
         """
+
+    async def load_async(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+        """Async version of :meth:`.load`.
+        The default implementation simply calls :meth:`.load`, but subclasses may override
+        this implementation to provide an async version.
+        """
+        return self.load(req, challenges=challenges)
 
 
 class HeaderGetter(Getter):
@@ -161,8 +194,10 @@ class MultiGetter(Getter):
             value successfully returned is used.
     """
 
+    async_calls_sync_load = True
+
     def __init__(self, getters: Iterable[Getter]):
-        self.getters = tuple(getters)
+        self.getters: Tuple[Getter] = tuple(getters)
         if len(self.getters) < 2:
             raise ValueError("Must pass more than one getter")
         if any(not isinstance(g, Getter) for g in self.getters):
@@ -170,11 +205,22 @@ class MultiGetter(Getter):
 
     def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
         """Loads the value from the provided request using the provided getters"""
-        for p in self.getters:
+        is_async = isinstance(req, AsyncRequest)
+        for g in self.getters:
             try:
-                return p.load(req)
+                if is_async and not g.async_calls_sync_load:
+                    return await_(g.load_async(req))
+                else:
+                    return g.load(req)
             except BackendNotApplicable:
                 pass
         raise BackendNotApplicable(
             description="No authentication information found", challenges=challenges
         )
+
+    async def load_async(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+        """Async version of :meth:`.load`.
+
+        Makes sure ``load`` is called inside a greenlet spawn context
+        """
+        return await greenlet_spawn(self.load, req, challenges=challenges)

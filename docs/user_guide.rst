@@ -12,6 +12,9 @@ Usage
 ~~~~~
 
 This package provides a falcon middleware to authenticate incoming requests using the selected authentication backend. The middleware allows excluding some routes or method from authentication. After a successful authentication the middleware adds the user identified by the request to the ``request context``.
+When using falcon v3+, the middleware also supports async execution.
+
+See below :ref:`example_wsgi` and :ref:`example_asgi` for complete examples.
 
 .. code:: python
 
@@ -80,3 +83,19 @@ The middleware allows each resource to customize the backend used for authentica
             resp.media = "No auth in this resource"
 
     app.add_route("/no-auth", NoAuthResource())
+
+Examples
+~~~~~~~~
+.. _example_wsgi:
+
+WSGI example
+^^^^^^^^^^^^
+
+.. literalinclude:: ../examples/readme_example.py
+
+.. _example_asgi:
+
+ASGI example
+^^^^^^^^^^^^
+
+.. literalinclude:: ../examples/readme_example_async.py

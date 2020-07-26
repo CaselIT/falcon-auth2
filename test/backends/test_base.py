@@ -4,7 +4,7 @@ import pytest
 from falcon_auth2 import HeaderGetter, ParamGetter, RequestAttributes
 from falcon_auth2.backends import GenericAuthBackend, NoAuthBackend
 
-from .conftest import ResourceFixture
+from .conftest import ConfigurableGetter, ResourceFixture
 
 
 def mock_loader(attr):
@@ -51,6 +51,20 @@ class TestNoAuthBackend(ResourceFixture):
         req = client.simulate_get("/auth")
         assert req.status == falcon.HTTP_UNAUTHORIZED
         assert req.headers.get("WWW-Authenticate") == "foo"
+
+    def test_async_loader(self, client, backend, asgi):
+        async def async_loader(a):
+            return None
+
+        backend.user_loader = async_loader
+
+        for _ in range(3):
+            res = client.simulate_get("/auth")
+            if asgi:
+                assert res.status == falcon.HTTP_UNAUTHORIZED
+            else:
+                assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                assert "Cannot use async user loader" in res.json["description"]
 
 
 class TestGenericAuthBackend(ResourceFixture):
@@ -118,6 +132,20 @@ class TestGenericAuthBackend(ResourceFixture):
         assert req.status == falcon.HTTP_UNAUTHORIZED
         assert req.headers.get("WWW-Authenticate") == "bar"
 
+    def test_async_loader(self, client, backend, asgi):
+        async def async_loader(a, data):
+            return None
+
+        backend.user_loader = async_loader
+
+        for _ in range(3):
+            res = client.simulate_get("/auth", headers={"foo": "33"})
+            if asgi:
+                assert res.status == falcon.HTTP_UNAUTHORIZED
+            else:
+                assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                assert "Cannot use async user loader" in res.json["description"]
+
     def test_return_key(self, backend, client, resource, user_dict):
         backend.payload_key = "foo_bar"
 
@@ -127,3 +155,20 @@ class TestGenericAuthBackend(ResourceFixture):
 
         assert resource.context["user"] == user_dict["2"]
         assert resource.context["foo_bar"] == "2"
+
+    def test_async_getter(self, client, backend, asgi, user_dict):
+        backend.getter = ConfigurableGetter("2", "3", False)
+
+        req = client.simulate_post("/auth", headers={"foo": "1"})
+        assert req.status == falcon.HTTP_OK
+        if asgi:
+            assert req.text == str(user_dict["3"])
+        else:
+            assert req.text == str(user_dict["2"])
+
+    def test_async_getter_call_sync(self, client, backend, asgi, user_dict):
+        backend.getter = ConfigurableGetter("2", "3", True)
+
+        req = client.simulate_post("/auth", headers={"foo": "1"})
+        assert req.status == falcon.HTTP_OK
+        assert req.text == str(user_dict["2"])

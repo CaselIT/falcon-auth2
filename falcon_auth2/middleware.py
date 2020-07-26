@@ -3,7 +3,7 @@ from typing import Any, Iterable, Tuple
 from falcon import Request, Response
 
 from .backends import AuthBackend
-from .utils import RequestAttributes, check_backend
+from .utils import RequestAttributes, check_backend, greenlet_spawn
 
 
 class AuthMiddleware:
@@ -64,18 +64,35 @@ class AuthMiddleware:
             )
         return False, self.exempt_methods, self.backend
 
+    def _process_resource(self, attributes: RequestAttributes):
+        "Processes a resource"
+        req = attributes[0]
+        if req.uri_template in self.exempt_templates:
+            return
+        skip, exempt_methods, backend = self._get_auth_settings(attributes[2])
+        if skip or req.method in exempt_methods:
+            return
+
+        results = backend.authenticate(attributes)
+        results.setdefault("backend", backend)
+        setattr(req.context, self.context_attr, results)
+
     def process_resource(self, req: Request, resp: Response, resource: Any, params: dict):
         """Called by falcon when processing a resource.
 
         It will obtain the configuration to use on the resource and, if required, call the
         provided backend to authenticate the request.
         """
-        if req.uri_template in self.exempt_templates:
-            return
-        skip, exempt_methods, backend = self._get_auth_settings(resource)
-        if skip or req.method in exempt_methods:
-            return
+        self._process_resource(RequestAttributes(req, resp, resource, params, False))
 
-        results = backend.authenticate(RequestAttributes(req, resp, resource, params))
-        results.setdefault("backend", backend)
-        setattr(req.context, self.context_attr, results)
+    async def process_resource_async(
+        self, req: Request, resp: Response, resource: Any, params: dict
+    ):
+        """Called by async falcon when processing a resource.
+
+        It will obtain the configuration to use on the resource and, if required, call the
+        provided backend to authenticate the request.
+        """
+        await greenlet_spawn(
+            self._process_resource, RequestAttributes(req, resp, resource, params, True)
+        )
