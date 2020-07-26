@@ -8,6 +8,12 @@ Install
 
     $ pip install falcon-auth2
 
+If you plan to use async falcon with ASGI run
+
+.. code:: shell
+
+    $ pip install falcon-auth2[async]
+
 Usage
 ~~~~~
 

@@ -11,13 +11,17 @@ Falcon authentication middleware that supports multiple authentication schemes.
 ```sh
 $ pip install falcon-auth2
 ```
+If you plan to use async falcon with ASGI run
+```sh
+$ pip install falcon-auth2[async]
+```
 
 ## Usage
 
 This package provides a falcon middleware to authenticate incoming requests using the selected authentication backend. The middleware allows excluding some routes or method from authentication. After a successful authentication the middleware adds the user identified by the request to the ``request context``.
 When using falcon v3+, the middleware also supports async execution.
 
-See [readme_example](./examples/readme_example.py) and [readme_example_async](./examples/readme_example_async.py) for  complete examples.
+See [readme_example](./examples/readme_example.py) and [readme_example_async](./examples/readme_example_async.py) for complete examples.
 
 ```py
 import falcon
