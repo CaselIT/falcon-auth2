@@ -3,7 +3,7 @@ from typing import Callable, Iterable, List, Optional
 from falcon import HTTPUnauthorized
 
 from ..exc import BackendNotApplicable
-from ..utils import RequestAttributes, check_backend
+from ..utils import RequestAttributes, call_maybe_async, check_backend
 from .base import AuthBackend
 
 
@@ -20,14 +20,24 @@ class CallBackBackend(AuthBackend):
             :class:`~.RequestAttributes`, the ``backend`` and the authentication result (the dict
             that will be placed in the request context by the middleware) after a successful
             request authentication. Defaults to ``None``.
+            When using falcon in async mode (asgi), this function may also be async.
+
+            Note:
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
         on_failure (Optional[Callable], optional): Callable object that will be invoked with the
             :class:`~.RequestAttributes`, the ``backend`` and the raised exception after a failed
             request authentication. Defaults to ``None``.
+            When using falcon in async mode (asgi), this function may also be async.
+
+            Note:
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
 
             Note:
                 This method cannot be used to suppress the exception raised by the ``backend``
-                that will be propagated after the invocation ends, but the callable can choose
-                to raise a different exception instead.
+                because it will be propagated after the ``on_failure`` invocation ends.
+                The callable can choose to raise a different exception instead.
     """
 
     def __init__(
@@ -45,7 +55,9 @@ class CallBackBackend(AuthBackend):
 
         self.backend = backend
         self.on_success = on_success
+        self.on_success_is_async = None
         self.on_failure = on_failure
+        self.on_failure_is_async = None
 
     def authenticate(self, attributes: RequestAttributes) -> dict:
         "Authenticates the request and returns the authenticated user."
@@ -53,11 +65,27 @@ class CallBackBackend(AuthBackend):
             results = self.backend.authenticate(attributes)
             results.setdefault("backend", self.backend)
             if self.on_success:
-                self.on_success(attributes, self.backend, results)
+                _, self.on_success_is_async = call_maybe_async(
+                    attributes[4],
+                    self.on_success_is_async,
+                    "on success",
+                    self.on_success,
+                    attributes,
+                    self.backend,
+                    results,
+                )
             return results
         except Exception as e:
             if self.on_failure:
-                self.on_failure(attributes, self.backend, e)
+                _, self.on_failure_is_async = call_maybe_async(
+                    attributes[4],
+                    self.on_failure_is_async,
+                    "on failure",
+                    self.on_failure,
+                    attributes,
+                    self.backend,
+                    e,
+                )
             raise
 
 

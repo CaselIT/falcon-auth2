@@ -262,8 +262,10 @@ class TestMultiGetter:
 
         areq = testing.create_asgi_req(query_string="sync=sync&async=async")
         assert await greenlet_spawn(g.load, areq) == "async"
+        # test normal call async call
         assert await g.load_async(areq) == "async"
 
+        # test normal in greenlet_spawn
         def go():
             return await_(g.load_async(areq))
 

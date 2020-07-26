@@ -72,6 +72,26 @@ class TestCallBackBackend(ResourceFixture):
             assert canary == [1]
             assert isinstance(resource.context["backend"], NoAuthBackend)
 
+        def test_async_success(self, client, backend, asgi):
+            canary = []
+
+            async def on_success(a, b, r):
+                canary.append(1)
+                return None
+
+            backend.on_success = on_success
+
+            for _ in range(3):
+                canary.clear()
+                res = client.simulate_get("/auth")
+                if asgi:
+                    assert canary == [1]
+                    assert res.status == falcon.HTTP_OK
+                else:
+                    assert canary == []
+                    assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                    assert "Cannot use async on success" in res.json["description"]
+
     class TestErr:
         @pytest.fixture
         def backend(self):
@@ -98,6 +118,26 @@ class TestCallBackBackend(ResourceFixture):
             assert res.status == falcon.HTTP_UNAUTHORIZED
             assert "User not found " in res.text
             assert canary == [1]
+
+        def test_async_success(self, client, backend, asgi):
+            canary = []
+
+            async def on_failure(a, b, r):
+                canary.append(1)
+                return None
+
+            backend.on_failure = on_failure
+
+            for _ in range(3):
+                canary.clear()
+                res = client.simulate_get("/auth")
+                if asgi:
+                    assert canary == [1]
+                    assert res.status == falcon.HTTP_UNAUTHORIZED
+                else:
+                    assert canary == []
+                    assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
+                    assert "Cannot use async on failure" in res.json["description"]
 
 
 class CustomBackend(AuthBackend):

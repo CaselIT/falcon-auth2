@@ -1,10 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from asyncio import iscoroutine
 from typing import Any, Callable, Iterable, Optional
 
 from ..exc import UserNotFound
 from ..getter import Getter
-from ..utils import RequestAttributes, await_, check_getter
+from ..utils import RequestAttributes, await_, call_maybe_async, check_getter
 
 
 class AuthBackend(metaclass=ABCMeta):
@@ -48,9 +47,9 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             the request by the backend. The arguments passed to ``user_loader`` will vary
             depending on the :class:`AuthBackend`. It should return the user identified by
             the request, or ``None`` if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
 
             Note:
-                When using falcon in async mode (asgi), this function may also be async.
                 An error will be raised if an async function is used when using falcon in sync
                 mode (wsgi).
 
@@ -85,19 +84,15 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             Any: The loaded user object returned by ``user_loader``.
         """
         is_async = attributes[4]
-        user = self.user_loader(attributes, *args, **kwargs)
-        if self.user_loader_is_async is None:
-            self.user_loader_is_async = iscoroutine(user)
-
-        if self.user_loader_is_async:
-            if is_async:
-                # user is coroutine here. await it
-                user = await_(user)
-            else:
-                raise TypeError(
-                    f"Cannot use async user loader {self.user_loader} when"
-                    " falcon not running in async mode (asgi)."
-                )
+        user, self.user_loader_is_async = call_maybe_async(
+            is_async,
+            self.user_loader_is_async,
+            "user loader",
+            self.user_loader,
+            attributes,
+            *args,
+            **kwargs,
+        )
         if not user:
             raise UserNotFound(
                 description="User not found for provided payload", challenges=self.challenges
@@ -117,6 +112,11 @@ class NoAuthBackend(BaseAuthBackend):
             :class:`~.RequestAttributes` object and returns a default unauthenticated user (
             alternatively the user identified by a custom authentication workflow) or ``None``
             if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
+
+            Note:
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
 
             Note:
                 Exception raised in this callable are not handled directly, and are surfaced to
@@ -148,6 +148,11 @@ class GenericAuthBackend(BaseAuthBackend):
             :class:`~.RequestAttributes` object and the information extracted from the request
             using the provided ``getter``. It should return the user identified by the request,
             or ``None`` if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
+
+            Note:
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
 
             Note:
                 Exception raised in this callable are not handled directly, and are surfaced to
