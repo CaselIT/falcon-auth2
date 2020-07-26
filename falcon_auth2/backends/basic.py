@@ -25,6 +25,11 @@ class BasicAuthBackend(BaseAuthBackend):
             :class:`~RequestAttributes` object and the username and password credentials
             extracted from the request using the provided ``getter``. It should return the user
             identified by the request, or ``None`` if no user could be not found.
+            When using falcon in async mode (asgi), this function may also be async.
+
+            Note:
+                An error will be raised if an async function is used when using falcon in sync
+                mode (wsgi).
 
             Note:
                 Exception raised in this callable are not handled directly, and are surfaced to
