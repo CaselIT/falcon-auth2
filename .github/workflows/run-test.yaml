@@ -43,3 +43,11 @@ jobs:
 
       - name: Run tests
         run: tox
+
+      - name: Upload coverage
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.8' }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          pip install codecov
+          codecov

@@ -3,6 +3,7 @@
 [![build](https://github.com/CaselIT/falcon-auth2/workflows/Run%20tests/badge.svg)](https://github.com/CaselIT/falcon-auth2/actions?query=workflow%3A%22Run+tests%22)
 [![pypi](https://img.shields.io/pypi/v/falcon-auth2.svg)](https://pypi.python.org/pypi/falcon-auth2)
 [![Documentation Status](https://readthedocs.org/projects/falcon-auth2/badge/?version=latest)](https://falcon-auth2.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/CaselIT/falcon-auth2/branch/master/graph/badge.svg)](https://codecov.io/gh/CaselIT/falcon-auth2)
 
 Falcon authentication middleware that supports multiple authentication schemes. 
 
