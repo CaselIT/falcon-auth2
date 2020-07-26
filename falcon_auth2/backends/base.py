@@ -54,7 +54,7 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
                 mode (wsgi).
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
@@ -119,7 +119,7 @@ class NoAuthBackend(BaseAuthBackend):
                 mode (wsgi).
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         challenges (Optional[Iterable[str]], optional): One or more authentication challenges to
@@ -155,7 +155,7 @@ class GenericAuthBackend(BaseAuthBackend):
                 mode (wsgi).
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
         getter (Getter): Getter used to extract the authentication information from the request.
             The returned value is passed to the ``user_loader`` callable.

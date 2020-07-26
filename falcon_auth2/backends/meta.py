@@ -19,25 +19,25 @@ class CallBackBackend(AuthBackend):
         on_success (Optional[Callable], optional): Callable object that will be invoked with the
             :class:`~.RequestAttributes`, the ``backend`` and the authentication result (the dict
             that will be placed in the request context by the middleware) after a successful
-            request authentication. Defaults to ``None``.
-            When using falcon in async mode (asgi), this function may also be async.
+            request authentication. When using falcon in async mode (asgi), this function may
+            also be async. Defaults to ``None``.
 
             Note:
                 An error will be raised if an async function is used when using falcon in sync
                 mode (wsgi).
         on_failure (Optional[Callable], optional): Callable object that will be invoked with the
             :class:`~.RequestAttributes`, the ``backend`` and the raised exception after a failed
-            request authentication. Defaults to ``None``.
-            When using falcon in async mode (asgi), this function may also be async.
+            request authentication. When using falcon in async mode (asgi), this function may
+            also be async. Defaults to ``None``.
 
             Note:
                 An error will be raised if an async function is used when using falcon in sync
                 mode (wsgi).
 
             Note:
-                This method cannot be used to suppress the exception raised by the ``backend``
-                because it will be propagated after the ``on_failure`` invocation ends.
-                The callable can choose to raise a different exception instead.
+                This method cannot be used to suppress an exception raised by the ``backend``
+                because it will be propagated after ``on_failure`` invocation ends.
+                The callable may choose to raise a different exception instead.
     """
 
     def __init__(

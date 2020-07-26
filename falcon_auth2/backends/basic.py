@@ -32,7 +32,7 @@ class BasicAuthBackend(BaseAuthBackend):
                 mode (wsgi).
 
             Note:
-                Exception raised in this callable are not handled directly, and are surfaced to
+                Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
     Keyword Args:
         auth_header_type (string, optional): The type of authentication required in the

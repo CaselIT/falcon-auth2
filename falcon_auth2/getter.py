@@ -16,17 +16,18 @@ class Getter(metaclass=ABCMeta):
     """Represents a class that extracts authentication information from a request.
 
     Note:
-        Subclasses that wish to only support the async method :meth:`Getter.load_async` are also
-        required to override the :meth:`Getter.load` method since it is defined as abstract.
+        Subclasses that wish to only support the :meth:`.load_async` method are also
+        required to override the :meth:`.load` method since it is defined as abstract.
         In these cases the sync version may just raise an exception.
     """
 
     async_calls_sync_load = None
     """Indicates if this Getter has an async load implementation that is not just a fallback to
-    :meth:`Getter.load` like the default :meth:`Getter.load_async`.
+    sync :meth:`.load` method, like the default :meth:`.load_async` method.
 
-    This property is automatically set by the :class:`Getter` when a subclass is defined if not
-    specified directly by a subclass (by setting it to a valued different than ``None``).
+    This property is automatically set by the :class:`Getter` when a subclass is defined
+    (using ``__init_subclass__``) if not specified directly by a subclass
+    (by setting it to a valued different than ``None``).
     """
 
     def __init_subclass__(cls):
@@ -53,9 +54,9 @@ class Getter(metaclass=ABCMeta):
         """
 
     async def load_async(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
-        """Async version of :meth:`Getter.load`.
-        The default implementation simply calls :meth:`Getter.load`, but subclasses may override
-        the implementation to provide an async version.
+        """Async version of :meth:`.load`.
+        The default implementation simply calls :meth:`.load`, but subclasses may override
+        this implementation to provide an async version.
         """
         return self.load(req, challenges=challenges)
 
@@ -218,5 +219,8 @@ class MultiGetter(Getter):
         )
 
     async def load_async(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
-        """Async version of :meth:`Getter.load`. Makes sure we are in a greenlet spawn process"""
+        """Async version of :meth:`.load`.
+
+        Makes sure ``load`` is called inside a greenlet spawn context
+        """
         return await greenlet_spawn(self.load, req, challenges=challenges)
