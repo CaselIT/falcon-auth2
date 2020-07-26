@@ -15,7 +15,7 @@ try:
         # this is called in the context greenlet while running __fn
         current = greenlet.getcurrent()
         if not isinstance(current, _AsyncIoGreenlet):
-            raise TypeError("Cannot use await_ outside of greenlet_spawn target")
+            raise RuntimeError("Cannot use await_ outside of greenlet_spawn target")
         # returns the control to the driver greenlet passing it
         # a coroutine to run. Once the awaitable is done, the driver greenlet
         # switches back to this greenlet with the result of awaitable that is

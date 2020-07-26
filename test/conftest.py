@@ -46,6 +46,8 @@ def create_app(auth_middleware, resource, asgi):
             from falcon import App
 
         def handle(req, resp, ex, params):
+            if isinstance(ex, falcon.HTTPError):
+                raise ex
             raise falcon.HTTPInternalServerError(description=str(ex))
 
         app = App(middleware=[auth_middleware])
