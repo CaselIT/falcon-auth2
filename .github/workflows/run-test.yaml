@@ -46,7 +46,7 @@ jobs:
         run: tox
 
       - name: Upload coverage
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9' }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
