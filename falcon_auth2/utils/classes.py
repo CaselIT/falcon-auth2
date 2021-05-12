@@ -1,5 +1,8 @@
-from typing import Any, NamedTuple
-from falcon import Request, Response
+from typing import Any
+from typing import NamedTuple
+
+from falcon import Request
+from falcon import Response
 
 
 class RequestAttributes(NamedTuple):

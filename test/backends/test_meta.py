@@ -1,19 +1,21 @@
 import falcon
-import pytest
 from falcon import testing
+import pytest
 
-from falcon_auth2 import ParamGetter, RequestAttributes, UserNotFound, exc
-from falcon_auth2.backends import (
-    AuthBackend,
-    BasicAuthBackend,
-    CallBackBackend,
-    GenericAuthBackend,
-    MultiAuthBackend,
-    NoAuthBackend,
-)
-
-from .conftest import ResourceFixture, create_app_backend
-from .test_basic import basic_auth_token, find_user
+from falcon_auth2 import exc
+from falcon_auth2 import ParamGetter
+from falcon_auth2 import RequestAttributes
+from falcon_auth2 import UserNotFound
+from falcon_auth2.backends import AuthBackend
+from falcon_auth2.backends import BasicAuthBackend
+from falcon_auth2.backends import CallBackBackend
+from falcon_auth2.backends import GenericAuthBackend
+from falcon_auth2.backends import MultiAuthBackend
+from falcon_auth2.backends import NoAuthBackend
+from .conftest import create_app_backend
+from .conftest import ResourceFixture
+from .test_basic import basic_auth_token
+from .test_basic import find_user
 
 nab = NoAuthBackend(lambda x: None)
 

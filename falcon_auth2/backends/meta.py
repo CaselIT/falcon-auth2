@@ -1,10 +1,15 @@
-from typing import Callable, Iterable, List, Optional
+from typing import Callable
+from typing import Iterable
+from typing import List
+from typing import Optional
 
 from falcon import HTTPUnauthorized
 
-from ..exc import BackendNotApplicable
-from ..utils import RequestAttributes, call_maybe_async, check_backend
 from .base import AuthBackend
+from ..exc import BackendNotApplicable
+from ..utils import call_maybe_async
+from ..utils import check_backend
+from ..utils import RequestAttributes
 
 
 class CallBackBackend(AuthBackend):

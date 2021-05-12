@@ -1,6 +1,9 @@
 import falcon
-from falcon_auth2 import AuthMiddleware, HeaderGetter
-from falcon_auth2.backends import BasicAuthBackend, GenericAuthBackend
+
+from falcon_auth2 import AuthMiddleware
+from falcon_auth2 import HeaderGetter
+from falcon_auth2.backends import BasicAuthBackend
+from falcon_auth2.backends import GenericAuthBackend
 
 # To run this application with waitress (or any other wsgi server)
 # waitress-serve --port 8080 readme_example:app

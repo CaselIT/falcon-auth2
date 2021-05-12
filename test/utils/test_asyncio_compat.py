@@ -1,6 +1,7 @@
 import pytest
 
-from falcon_auth2.utils import await_, greenlet_spawn
+from falcon_auth2.utils import await_
+from falcon_auth2.utils import greenlet_spawn
 
 
 async def run1():

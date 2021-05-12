@@ -1,10 +1,11 @@
 import falcon
-import pytest
 from falcon import testing
+import pytest
 
-from falcon_auth2 import AuthMiddleware, RequestAttributes
-from falcon_auth2.backends import AuthBackend, NoAuthBackend
-
+from falcon_auth2 import AuthMiddleware
+from falcon_auth2 import RequestAttributes
+from falcon_auth2.backends import AuthBackend
+from falcon_auth2.backends import NoAuthBackend
 from .conftest import User
 
 

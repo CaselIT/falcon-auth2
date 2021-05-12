@@ -1,10 +1,13 @@
 import falcon
 import pytest
 
-from falcon_auth2 import HeaderGetter, ParamGetter, RequestAttributes
-from falcon_auth2.backends import GenericAuthBackend, NoAuthBackend
-
-from .conftest import ConfigurableGetter, ResourceFixture
+from falcon_auth2 import HeaderGetter
+from falcon_auth2 import ParamGetter
+from falcon_auth2 import RequestAttributes
+from falcon_auth2.backends import GenericAuthBackend
+from falcon_auth2.backends import NoAuthBackend
+from .conftest import ConfigurableGetter
+from .conftest import ResourceFixture
 
 
 def mock_loader(attr):

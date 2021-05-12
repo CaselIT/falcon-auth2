@@ -1,5 +1,7 @@
 import sys
-from typing import Any, Callable, Coroutine
+from typing import Any
+from typing import Callable
+from typing import Coroutine
 
 try:
     import greenlet

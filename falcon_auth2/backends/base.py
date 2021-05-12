@@ -1,9 +1,16 @@
-from abc import ABCMeta, abstractmethod
-from typing import Any, Callable, Iterable, Optional
+from abc import ABCMeta
+from abc import abstractmethod
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import Optional
 
 from ..exc import UserNotFound
 from ..getter import Getter
-from ..utils import RequestAttributes, await_, call_maybe_async, check_getter
+from ..utils import await_
+from ..utils import call_maybe_async
+from ..utils import check_getter
+from ..utils import RequestAttributes
 
 
 class AuthBackend(metaclass=ABCMeta):

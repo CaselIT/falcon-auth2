@@ -1,6 +1,9 @@
 import falcon.asgi
-from falcon_auth2 import AuthMiddleware, HeaderGetter
-from falcon_auth2.backends import BasicAuthBackend, GenericAuthBackend
+
+from falcon_auth2 import AuthMiddleware
+from falcon_auth2 import HeaderGetter
+from falcon_auth2.backends import BasicAuthBackend
+from falcon_auth2.backends import GenericAuthBackend
 
 # To run this application with uvicorn (or any other asgi server)
 # uvicorn --port 8080 readme_example_async:app

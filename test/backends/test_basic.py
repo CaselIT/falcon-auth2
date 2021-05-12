@@ -3,10 +3,12 @@ import base64
 import falcon
 import pytest
 
-from falcon_auth2 import AuthHeaderGetter, ParamGetter, RequestAttributes
+from falcon_auth2 import AuthHeaderGetter
+from falcon_auth2 import ParamGetter
+from falcon_auth2 import RequestAttributes
 from falcon_auth2.backends import BasicAuthBackend
-
-from .conftest import ConfigurableGetter, ResourceFixture
+from .conftest import ConfigurableGetter
+from .conftest import ResourceFixture
 
 
 def basic_auth_token(user, pwd, prefix="Basic"):

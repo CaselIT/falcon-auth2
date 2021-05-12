@@ -1,15 +1,19 @@
-from abc import ABCMeta, abstractmethod
-from typing import Iterable, Optional, Tuple
+from abc import ABCMeta
+from abc import abstractmethod
+from typing import Iterable
+from typing import Optional
+from typing import Tuple
 
 from falcon import Request
+
+from .exc import BackendNotApplicable
+from .utils import await_
+from .utils import greenlet_spawn
 
 try:
     from falcon.asgi import Request as AsyncRequest
 except ImportError:  # pragma: no cover
     AsyncRequest = type(None)
-
-from .exc import BackendNotApplicable
-from .utils import await_, greenlet_spawn
 
 
 class Getter(metaclass=ABCMeta):

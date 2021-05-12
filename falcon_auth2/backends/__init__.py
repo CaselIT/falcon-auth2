@@ -1,3 +1,7 @@
-from .base import AuthBackend, BaseAuthBackend, GenericAuthBackend, NoAuthBackend
+from .base import AuthBackend
+from .base import BaseAuthBackend
+from .base import GenericAuthBackend
+from .base import NoAuthBackend
 from .basic import BasicAuthBackend
-from .meta import CallBackBackend, MultiAuthBackend
+from .meta import CallBackBackend
+from .meta import MultiAuthBackend
