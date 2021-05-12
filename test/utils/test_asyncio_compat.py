@@ -1,3 +1,6 @@
+# based on sqlalchemy's test/base/test_concurrency_py3k.py
+import asyncio
+
 import pytest
 
 from falcon_auth2.utils import await_
@@ -52,3 +55,32 @@ class TestAsyncioCompat:
 
         with pytest.raises(RuntimeError, match="Cannot use await_ outside"):
             await greenlet_spawn(go)
+
+    @pytest.mark.asyncio
+    async def test_contextvars(self):
+        try:
+            import contextvars
+        except ImportError:
+            pytest.skip("Cannot import contexvars")
+
+        var = contextvars.ContextVar("var")
+        concurrency = 5
+
+        async def async_inner(val):
+            assert val == var.get()
+            return var.get()
+
+        def inner(val):
+            retval = await_(async_inner(val))
+            assert val == var.get()
+            assert retval == val
+            return retval
+
+        async def task(val):
+            var.set(val)
+            return await greenlet_spawn(inner, val)
+
+        values = {
+            await coro for coro in asyncio.as_completed([task(i) for i in range(concurrency)])
+        }
+        assert values == set(range(concurrency))
