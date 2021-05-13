@@ -1,9 +1,14 @@
-from typing import Any, Iterable, Tuple
+from typing import Any
+from typing import Iterable
+from typing import Tuple
 
-from falcon import Request, Response
+from falcon import Request
+from falcon import Response
 
 from .backends import AuthBackend
-from .utils import RequestAttributes, check_backend, greenlet_spawn
+from .utils import check_backend
+from .utils import greenlet_spawn
+from .utils import RequestAttributes
 
 
 class AuthMiddleware:

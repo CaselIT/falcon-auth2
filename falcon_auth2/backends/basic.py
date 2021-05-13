@@ -1,12 +1,16 @@
 import base64
-from typing import Callable, Optional
+from typing import Callable
+from typing import Optional
 
 from falcon import Request
 
-from ..exc import BackendNotApplicable
-from ..getter import AuthHeaderGetter, Getter
-from ..utils import RequestAttributes, await_, check_getter
 from .base import BaseAuthBackend
+from ..exc import BackendNotApplicable
+from ..getter import AuthHeaderGetter
+from ..getter import Getter
+from ..utils import await_
+from ..utils import check_getter
+from ..utils import RequestAttributes
 
 
 class BasicAuthBackend(BaseAuthBackend):

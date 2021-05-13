@@ -105,3 +105,4 @@ dmypy.json
 .pyre/
 
 publish.ps1
+.vscode

@@ -1,10 +1,11 @@
 import falcon
-import pytest
 from falcon import testing
+import pytest
 
-from falcon_auth2 import AuthMiddleware, RequestAttributes
-from falcon_auth2.backends import AuthBackend, NoAuthBackend
-
+from falcon_auth2 import AuthMiddleware
+from falcon_auth2 import RequestAttributes
+from falcon_auth2.backends import AuthBackend
+from falcon_auth2.backends import NoAuthBackend
 from .conftest import User
 
 
@@ -137,7 +138,7 @@ class TestAuthMiddleware:
             assert req.context.foobar["user"] is user
             res.body = "ok"
 
-        client = create_client(Resource(m), lambda auth: user, dict(context_attr="foobar"),)
+        client = create_client(Resource(m), lambda auth: user, dict(context_attr="foobar"))
 
         res = client.simulate_get("/auth")
         assert res.status == falcon.HTTP_OK
@@ -207,7 +208,8 @@ class TestAuthMiddleware:
         u2 = User(11, "foo", "foo")
         my_backend = NoAuthBackend(lambda auth: u2)
         client = create_client(
-            Resource(auth(u2, "get", my_backend), auth={"backend": my_backend}), lambda auth: user,
+            Resource(auth(u2, "get", my_backend), auth={"backend": my_backend}),
+            lambda auth: user,
         )
 
         res = client.simulate_get("/auth")

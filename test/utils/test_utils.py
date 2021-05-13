@@ -2,7 +2,9 @@ import pytest
 
 from falcon_auth2.backends import NoAuthBackend
 from falcon_auth2.getter import HeaderGetter
-from falcon_auth2.utils import RequestAttributes, check_backend, check_getter
+from falcon_auth2.utils import check_backend
+from falcon_auth2.utils import check_getter
+from falcon_auth2.utils import RequestAttributes
 
 
 def test_requestAttributes():

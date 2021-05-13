@@ -1,8 +1,12 @@
+from falcon import Request
+from falcon import RequestOptions
+from falcon import testing
 import pytest
-from falcon import Request, RequestOptions, testing
-from falcon_auth2.utils import await_, greenlet_spawn
 
-from falcon_auth2 import BackendNotApplicable, getter
+from falcon_auth2 import BackendNotApplicable
+from falcon_auth2 import getter
+from falcon_auth2.utils import await_
+from falcon_auth2.utils import greenlet_spawn
 
 
 def make_request(**kw):

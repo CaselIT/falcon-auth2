@@ -1,6 +1,8 @@
 from falcon import HTTPUnauthorized
 
-from falcon_auth2.exc import AuthenticationFailure, BackendNotApplicable, UserNotFound
+from falcon_auth2.exc import AuthenticationFailure
+from falcon_auth2.exc import BackendNotApplicable
+from falcon_auth2.exc import UserNotFound
 
 
 def test_exc():
