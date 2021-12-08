@@ -28,14 +28,15 @@ class JWTAuthBackend(BaseAuthBackend):
     Clients should authenticate by passing the token key in the `Authorization`
     HTTP header, prepending it with the type specified in the setting ``auth_header_type``.
 
-    The authentication is demanded to the `Authlib <https://authlib.org>`_ library.
-    See also its `JSON Web Token (JWT) <https://docs.authlib.org/en/latest/jose/jwt.html>`_
-    documentation for additional details on the authentication library features.
+    This backend uses the `Authlib <https://authlib.org>`_ library to handle the validation
+    of the tokens. See also its `JSON Web Token (JWT)
+    <https://docs.authlib.org/en/latest/jose/jwt.html>`_ documentation for additional
+    details on the authentication library features.
 
     Args:
         user_loader (Callable): A callable object that is called with the
-            :class:`~RequestAttributes` object and the token payload obtained after a successful
-            validation. It should return the user identified by the request, or ``None``
+            :class:`~.RequestAttributes` object and the token payload obtained after a successful
+            validation. It should return the user identified by the token, or ``None``
             if no user could be not found. The token is extracted from the request using
             the provided ``getter``.
             When using falcon in async mode (asgi), this function may also be async.
@@ -48,8 +49,9 @@ class JWTAuthBackend(BaseAuthBackend):
                 Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
         key (str, bytes, dict, Callable): The key to use to decode the tokens.
-            This parameter is passed to ``JsonWebToken.decode`` to verify the signature of the
-            token. A static key can be passed as string or bytes. Dynamic keys are also supported
+            This parameter is passed to the ``JsonWebToken.decode()`` method and is used to verify
+            the signature of the token.
+            A key can be passed as string or bytes. Dynamic keys are also supported
             by passing a "JWK set" dict or a callable that is called with the token header
             and payload and returns the key to use to validate the current token signature.
             See `Use dynamic keys
@@ -62,21 +64,21 @@ class JWTAuthBackend(BaseAuthBackend):
 
             Note:
                 When passing a custom ``getter`` this value is only used to generate the
-                ``challenges``, since the getter will be used to obtain the credentials to
-                authenticate.
+                ``challenges``, since the provided getter will be used to obtain the credentials
+                to authenticate.
         getter (Optional[Getter]): Getter used to extract the authentication token from the
             request. When using a custom getter, the returned value must be a valid jwt token in
             string form (ie not yet parsed).
             Defaults to :class:`~.AuthHeaderGetter` initialized with the provided
             ``auth_header_type``.
-        algorithms (str, List[str]): The signing algorithms that should be supported. Using a list
-            multiple values may be provided. Defaults to ``'HS256'``. Allowed values are listed
-            at `RFC7518: JSON Web Algorithms
+        algorithms (str, List[str]): The signing algorithm(s) that should be supported.
+            Using a list multiple values may be provided. Defaults to ``'HS256'``.
+            Allowed values are listed at `RFC7518: JSON Web Algorithms
             <https://docs.authlib.org/en/latest/specs/rfc7518.html#specs-rfc7518>`_.
         claims_options (dict): The claims to validate in the token. By default the value
             returned by :meth:`.JWTAuthBackend.default_claims` is used.
-        leeway (int): Leeway in seconds to pass to the ``validate()`` call to account for
-            clock skew. Default 0.
+        leeway (int): Leeway in seconds to pass to the ``JWTClaims.validate()`` call to
+            account for clock skew. Defaults to 0.
     """
 
     def __init__(
@@ -105,17 +107,17 @@ class JWTAuthBackend(BaseAuthBackend):
         self.claims_options = self.default_claims() if claims_options is None else claims_options
 
     def default_claims(self):
-        """Returns the default claims.
+        """Returns the default claims to verify in the tokens.
 
         The default claims check that the 'iss', 'sub', 'aud', 'exp', 'nbf', 'iat' are present in
         the token.
 
-        Subclasses may choose to override this. The claims may also be passed using the
+        Subclasses can choose to override this method. The claims may also be passed using the
         ``claims_options`` parameter when instanciating this class.
 
         See `JWT Payload Claims Validation
         <https://docs.authlib.org/en/latest/jose/jwt.html#jwt-payload-claims-validation>`_
-        for additional details.
+        for additional details on the ``claims_options`` format.
         """
         return {
             "iss": {"essential": True},

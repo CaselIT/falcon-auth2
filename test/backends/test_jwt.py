@@ -238,7 +238,7 @@ class TestJWTAuth(ResourceFixture):
         req = client.simulate_post("/auth", headers={"Authorization": token})
         assert req.status == falcon.HTTP_OK
 
-    def test_async_loader(self, client, backend, asgi, key):
+    def test_async_loader(self, client, backend, asgi, key, recwarn):
         async def async_loader(a, p):
             return None
 
@@ -253,6 +253,7 @@ class TestJWTAuth(ResourceFixture):
             else:
                 assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
                 assert "Cannot use async user loader" in res.json["description"]
+                assert recwarn.list
 
     def test_async_getter(self, client, backend, asgi, user_dict, key):
         backend.getter = ConfigurableGetter(
