@@ -6,18 +6,19 @@ Install
 
 .. code:: shell
 
-    $ pip install falcon-auth2
+    $ pip install falcon-auth2[jwt]
 
-If you plan to use async falcon with ASGI run
+| The above will install `falcon-auth2` and also the dependencies to use the ``JWT`` authentication backend.
+| If you plan to use async falcon with ASGI run:
 
 .. code:: shell
 
-    $ pip install falcon-auth2[async]
+    $ pip install falcon-auth2[jwt, async]
 
 Usage
 ~~~~~
 
-This package provides a falcon middleware to authenticate incoming requests using the selected authentication backend. The middleware allows excluding some routes or method from authentication. After a successful authentication the middleware adds the user identified by the request to the ``request context``.
+This package provides a falcon middleware to authenticate incoming requests using the selected authentication backend. The middleware allows excluding some routes or method from authentication. After a successful authentication the middleware adds the user identified by the request to the ``request.context``.
 When using falcon v3+, the middleware also supports async execution.
 
 See below :ref:`example_wsgi` and :ref:`example_asgi` for complete examples.
@@ -45,7 +46,7 @@ See below :ref:`example_wsgi` and :ref:`example_asgi` for complete examples.
             #   {
             #       'backend': <instance of the backend that performed the authentication>,
             #       'user': <user object retrieved from the user_loader callable>,
-            #       '<backend specific item>': <some extra data from the backend>,
+            #       '<backend specific item>': <some extra data that may be added by the backend>,
             #       ...
             #   }
             user = req.context.auth["user"]
@@ -53,8 +54,8 @@ See below :ref:`example_wsgi` and :ref:`example_asgi` for complete examples.
 
     app.add_route('/hello', HelloResource())
 
-Override Authentication for a resource
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Overriding authentication for a resource
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The middleware allows each resource to customize the backend used for authentication or the excluded methods. A resource can also specify that does not need authentication.
 

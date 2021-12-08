@@ -13,15 +13,15 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(".."))
-
 import falcon_auth2  # noqa
+
+sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "Falcon Auth2"
-copyright = "2020, Federico Caselli"
+copyright = "2020-2021, Federico Caselli"
 author = "Federico Caselli"
 
 version = falcon_auth2.__version__

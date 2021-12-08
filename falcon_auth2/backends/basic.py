@@ -26,9 +26,9 @@ class BasicAuthBackend(BaseAuthBackend):
 
     Args:
         user_loader (Callable): A callable object that is called with the
-            :class:`~RequestAttributes` object and the username and password credentials
+            :class:`~.RequestAttributes` object and the username and password credentials
             extracted from the request using the provided ``getter``. It should return the user
-            identified by the request, or ``None`` if no user could be not found.
+            identified by the credentials, or ``None`` if no user could be not found.
             When using falcon in async mode (asgi), this function may also be async.
 
             Note:
@@ -44,8 +44,9 @@ class BasicAuthBackend(BaseAuthBackend):
             Defaults to ``"Basic"``.
 
             Note:
-                When passing a custom getter this value is only used to generate the ``challenges``,
-                since the getter will be used to obtain the credentials to authenticate.
+                When passing a custom ``getter`` this value is only used to generate the
+                ``challenges``, since the provided getter will be used to obtain the credentials
+                to authenticate.
         getter (Optional[Getter]): Getter used to extract the authentication information from the
             request. When using a custom getter, the returned value must be a ``base64`` encoded
             string with the credentials in the format ``username:password``.
@@ -77,7 +78,7 @@ class BasicAuthBackend(BaseAuthBackend):
             username, password = auth_data.split(":", 1)
         except Exception:
             raise BackendNotApplicable(
-                description="Invalid Authorization Header: Unable to decode credentials",
+                description="Invalid Authorization. Unable to decode credentials",
                 challenges=self.challenges,
             )
 

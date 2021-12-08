@@ -8,4 +8,5 @@ python:
       path: .
       extra_requirements:
         - async
+        - jwt
     - requirements: docs/requirements.txt
