@@ -63,3 +63,10 @@ def create_app(auth_middleware, resource, asgi):
 def falcon3():
     if falcon2:
         pytest.skip("Requires async support added in falcon 3")
+
+
+def set_text(res, text):
+    if falcon2:
+        res.body = text
+    else:
+        res.text = text

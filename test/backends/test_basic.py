@@ -130,7 +130,7 @@ class TestBasicAuth(ResourceFixture):
         assert req.status == falcon.HTTP_UNAUTHORIZED
         assert req.headers.get("WWW-Authenticate") == "bar"
 
-    def test_async_loader(self, client, backend, asgi):
+    def test_async_loader(self, client, backend, asgi, recwarn):
         async def async_loader(a, u, p):
             return None
 
@@ -145,6 +145,7 @@ class TestBasicAuth(ResourceFixture):
             else:
                 assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
                 assert "Cannot use async user loader" in res.json["description"]
+                assert recwarn.list
 
     def test_async_getter(self, client, backend, asgi, user_dict):
         backend.getter = ConfigurableGetter(
