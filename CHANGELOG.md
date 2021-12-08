@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0]
+- Add JWT support.
+
 ## [0.0.2]
 - Async support for falcon v3+
 

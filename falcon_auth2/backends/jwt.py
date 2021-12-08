@@ -72,7 +72,7 @@ class JWTAuthBackend(BaseAuthBackend):
             Defaults to :class:`~.AuthHeaderGetter` initialized with the provided
             ``auth_header_type``.
         algorithms (str, List[str]): The signing algorithm(s) that should be supported.
-            Using a list multiple values may be provided. Defaults to ``'HS256'``.
+            Using a list multiple values may be provided. Defaults to ``"HS256"``.
             Allowed values are listed at `RFC7518: JSON Web Algorithms
             <https://docs.authlib.org/en/latest/specs/rfc7518.html#specs-rfc7518>`_.
         claims_options (dict): The claims to validate in the token. By default the value
