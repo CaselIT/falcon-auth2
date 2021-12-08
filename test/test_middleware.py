@@ -6,7 +6,9 @@ from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import RequestAttributes
 from falcon_auth2.backends import AuthBackend
 from falcon_auth2.backends import NoAuthBackend
-from .conftest import User
+from .conftest import User, set_text
+
+from falcon_auth2.utils.compat import falcon2
 
 
 class Resource:
@@ -20,7 +22,11 @@ def create_client(res, loader, mkw=None):
     mkw = mkw or {}
     backend = NoAuthBackend(loader)
     mkw.setdefault("backend", backend)
-    app = falcon.API(middleware=AuthMiddleware(**mkw))
+    if falcon2:
+        from falcon import API as App
+    else:
+        from falcon import App
+    app = App(middleware=AuthMiddleware(**mkw))
 
     app.add_route("/auth", res)
     app.add_route("/auth/{template}", res)
@@ -39,7 +45,7 @@ def auth(user, text="ok", backend=flag):
         assert req.context.auth["user"] is user
         if backend is not flag:
             assert req.context.auth["backend"] is backend
-        res.body = text
+        set_text(res, text)
 
     return m
 
@@ -47,7 +53,7 @@ def auth(user, text="ok", backend=flag):
 def no_auth(text):
     def m(req: falcon.Request, res, **kw):
         assert not hasattr(req.context, "auth")
-        res.body = text
+        set_text(res, text)
 
     return m
 
@@ -93,7 +99,7 @@ class TestAuthMiddleware:
             assert req.context.auth["user"] is user
             assert req.context.auth["backend"] is client.backend
 
-            res.body = "ok"
+            set_text(res, "ok")
 
         client = create_client(Resource(get), lambda auth: user)
 
@@ -136,7 +142,7 @@ class TestAuthMiddleware:
         def m(req, res):
             assert set(req.context.foobar.keys()) == {"user", "backend"}
             assert req.context.foobar["user"] is user
-            res.body = "ok"
+            set_text(res, "ok")
 
         client = create_client(Resource(m), lambda auth: user, dict(context_attr="foobar"))
 
@@ -174,7 +180,7 @@ class TestAuthMiddleware:
         def get(req, res):
             assert req.context.auth["user"] == 42
             assert req.context.auth["backend"] == "a-backend-here"
-            res.body = "ok"
+            set_text(res, "ok")
 
         client = create_client(Resource(get), lambda auth: 24, {"backend": MyBackend()})
 
