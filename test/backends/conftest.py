@@ -5,6 +5,7 @@ from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import Getter
 from falcon_auth2.utils.compat import falcon2
 from ..conftest import create_app
+from ..conftest import set_text
 from ..conftest import User
 
 
@@ -12,22 +13,22 @@ class AuthResource:
     def on_post(self, req, resp):
         user = req.context.auth["user"]
         self.context = req.context.auth
-        resp.body = str(user)
+        set_text(resp, str(user))
 
     def on_get(self, req, resp, **kwargs):
         self.context = req.context.auth
-        resp.body = "Success"
+        set_text(resp, "Success")
 
 
 class AuthResourceAsync:
     async def on_post(self, req, resp):
         user = req.context.auth["user"]
         self.context = req.context.auth
-        resp.body = str(user)
+        set_text(resp, str(user))
 
     async def on_get(self, req, resp, **kwargs):
         self.context = req.context.auth
-        resp.body = "Success"
+        set_text(resp, "Success")
 
 
 class ResourceFixture:

@@ -43,9 +43,11 @@ class TestAsyncioCompat:
             await greenlet_spawn(go)
 
     @pytest.mark.asyncio
-    async def test_await_error(self):
+    async def test_await_error(self, recwarn):
         with pytest.raises(RuntimeError, match="Cannot use await_ outside"):
             await_(run1())
+        assert recwarn.list
+        recwarn.list[:] = []
 
         async def inner_await():
             await_(run1())
@@ -55,6 +57,7 @@ class TestAsyncioCompat:
 
         with pytest.raises(RuntimeError, match="Cannot use await_ outside"):
             await greenlet_spawn(go)
+        assert recwarn.list
 
     @pytest.mark.asyncio
     async def test_contextvars(self):

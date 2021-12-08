@@ -55,7 +55,7 @@ class TestNoAuthBackend(ResourceFixture):
         assert req.status == falcon.HTTP_UNAUTHORIZED
         assert req.headers.get("WWW-Authenticate") == "foo"
 
-    def test_async_loader(self, client, backend, asgi):
+    def test_async_loader(self, client, backend, asgi, recwarn):
         async def async_loader(a):
             return None
 
@@ -68,6 +68,7 @@ class TestNoAuthBackend(ResourceFixture):
             else:
                 assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
                 assert "Cannot use async user loader" in res.json["description"]
+                assert recwarn.list
 
 
 class TestGenericAuthBackend(ResourceFixture):
@@ -135,7 +136,7 @@ class TestGenericAuthBackend(ResourceFixture):
         assert req.status == falcon.HTTP_UNAUTHORIZED
         assert req.headers.get("WWW-Authenticate") == "bar"
 
-    def test_async_loader(self, client, backend, asgi):
+    def test_async_loader(self, client, backend, asgi, recwarn):
         async def async_loader(a, data):
             return None
 
@@ -148,6 +149,7 @@ class TestGenericAuthBackend(ResourceFixture):
             else:
                 assert res.status == falcon.HTTP_INTERNAL_SERVER_ERROR
                 assert "Cannot use async user loader" in res.json["description"]
+                assert recwarn.list
 
     def test_return_key(self, backend, client, resource, user_dict):
         backend.payload_key = "foo_bar"
