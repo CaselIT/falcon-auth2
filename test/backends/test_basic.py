@@ -148,8 +148,8 @@ class TestBasicAuth(ResourceFixture):
 
     def test_async_getter(self, client, backend, asgi, user_dict):
         backend.getter = ConfigurableGetter(
-            basic_auth_token(user_dict["2"].user, user_dict["2"].pwd).partition(" ")[-1],
-            basic_auth_token(user_dict["3"].user, user_dict["3"].pwd).partition(" ")[-1],
+            basic_auth_token(user_dict["2"].user, user_dict["2"].pwd, None),
+            basic_auth_token(user_dict["3"].user, user_dict["3"].pwd, None),
             False,
         )
 
@@ -160,10 +160,10 @@ class TestBasicAuth(ResourceFixture):
         else:
             assert req.text == str(user_dict["2"])
 
-    def test_async_getter_call_sync(self, client, backend, asgi, user_dict):
+    def test_async_getter_call_sync(self, client, backend, user_dict):
         backend.getter = ConfigurableGetter(
-            basic_auth_token(user_dict["2"].user, user_dict["2"].pwd).partition(" ")[-1],
-            basic_auth_token(user_dict["3"].user, user_dict["3"].pwd).partition(" ")[-1],
+            basic_auth_token(user_dict["2"].user, user_dict["2"].pwd, None),
+            basic_auth_token(user_dict["3"].user, user_dict["3"].pwd, None),
             True,
         )
 

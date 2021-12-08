@@ -44,8 +44,9 @@ class BasicAuthBackend(BaseAuthBackend):
             Defaults to ``"Basic"``.
 
             Note:
-                When passing a custom getter this value is only used to generate the ``challenges``,
-                since the getter will be used to obtain the credentials to authenticate.
+                When passing a custom ``getter`` this value is only used to generate the
+                ``challenges``, since the getter will be used to obtain the credentials to
+                authenticate.
         getter (Optional[Getter]): Getter used to extract the authentication information from the
             request. When using a custom getter, the returned value must be a ``base64`` encoded
             string with the credentials in the format ``username:password``.
@@ -77,7 +78,7 @@ class BasicAuthBackend(BaseAuthBackend):
             username, password = auth_data.split(":", 1)
         except Exception:
             raise BackendNotApplicable(
-                description="Invalid Authorization Header: Unable to decode credentials",
+                description="Invalid Authorization. Unable to decode credentials",
                 challenges=self.challenges,
             )
 
