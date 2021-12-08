@@ -93,7 +93,6 @@ try:
             del context.driver
         return result
 
-
 except ImportError:  # pragma: no cover
     greenlet = None
 
