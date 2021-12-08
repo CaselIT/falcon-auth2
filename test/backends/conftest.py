@@ -5,7 +5,8 @@ from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import Getter
 from falcon_auth2.utils.compat import falcon2
 from ..conftest import create_app
-from ..conftest import User, set_text
+from ..conftest import set_text
+from ..conftest import User
 
 
 class AuthResource:

@@ -6,9 +6,9 @@ from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import RequestAttributes
 from falcon_auth2.backends import AuthBackend
 from falcon_auth2.backends import NoAuthBackend
-from .conftest import User, set_text
-
 from falcon_auth2.utils.compat import falcon2
+from .conftest import set_text
+from .conftest import User
 
 
 class Resource:
