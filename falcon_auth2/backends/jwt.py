@@ -50,10 +50,11 @@ class JWTAuthBackend(BaseAuthBackend):
         key (str, bytes, dict, Callable): The key to use to decode the tokens.
             This parameter is passed to ``JsonWebToken.decode`` to verify the signature of the
             token. A static key can be passed as string or bytes. Dynamic keys are also supported
-            by passing a "JWK set" dict or a callable that will be called with the token headers
-            and payload and should return the key to use.
-            See https://docs.authlib.org/en/latest/jose/jwt.html#use-dynamic-keys for additional
-            details on the supported values.
+            by passing a "JWK set" dict or a callable that is called with the token header
+            and payload and returns the key to use to validate the current token signature.
+            See `Use dynamic keys
+            <https://docs.authlib.org/en/latest/jose/jwt.html#use-dynamic-keys>`_
+            for additional details on the supported values.
     Keyword Args:
         auth_header_type (string, optional): The type of authentication required in the
             ``Authorization`` header. This value is added to the ``challenges`` in case of errors.
@@ -70,7 +71,8 @@ class JWTAuthBackend(BaseAuthBackend):
             ``auth_header_type``.
         algorithms (str, List[str]): The signing algorithms that should be supported. Using a list
             multiple values may be provided. Defaults to ``'HS256'``. Allowed values are listed
-            at https://docs.authlib.org/en/latest/specs/rfc7518.html#specs-rfc7518.
+            at `RFC7518: JSON Web Algorithms
+            <https://docs.authlib.org/en/latest/specs/rfc7518.html#specs-rfc7518>`_.
         claims_options (dict): The claims to validate in the token. By default the value
             returned by :meth:`.JWTAuthBackend.default_claims` is used.
         leeway (int): Leeway in seconds to pass to the ``validate()`` call to account for
@@ -111,8 +113,9 @@ class JWTAuthBackend(BaseAuthBackend):
         Subclasses may choose to override this. The claims may also be passed using the
         ``claims_options`` parameter when instanciating this class.
 
-        See https://docs.authlib.org/en/latest/jose/jwt.html#jwt-payload-claims-validation for
-        additional details.
+        See `JWT Payload Claims Validation
+        <https://docs.authlib.org/en/latest/jose/jwt.html#jwt-payload-claims-validation>`_
+        for additional details.
         """
         return {
             "iss": {"essential": True},

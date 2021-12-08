@@ -10,11 +10,12 @@ Falcon authentication middleware that supports multiple authentication schemes.
 ## Install
 
 ```sh
-$ pip install falcon-auth2
+$ pip install falcon-auth2[jwt]
 ```
-If you plan to use async falcon with ASGI run
+The above will install `falcon-auth2` and also the dependencies to use the ``JWT`` authentication backend.  
+If you plan to use async falcon with ASGI run:
 ```sh
-$ pip install falcon-auth2[async]
+$ pip install falcon-auth2[jwt, async]
 ```
 
 ## Usage
@@ -46,7 +47,7 @@ class HelloResource:
         #   {
         #       'backend': <instance of the backend that performed the authentication>,
         #       'user': <user object retrieved from the user_loader callable>,
-        #       '<backend specific item>': <some extra data from the backend>,
+        #       '<backend specific item>': <some extra data that may be added by the backend>,
         #       ...
         #   }
         user = req.context.auth["user"]
@@ -85,10 +86,10 @@ class NoAuthResource:
     auth = {"auth_disabled": True}
 
     def on_get(self, req, resp):
-        resp.body = "No auth in this resource"
+        resp.text = "No auth in this resource"
 
     def on_post(self, req, resp):
-        resp.body = "No auth in this resource"
+        resp.text = "No auth in this resource"
 
 app.add_route("/no-auth", NoAuthResource())
 
@@ -99,6 +100,11 @@ app.add_route("/no-auth", NoAuthResource())
 #### `BasicAuthBackend`
 
 Implements [HTTP Basic Authentication](https://tools.ietf.org/html/rfc7617) where clients should authenticate by passing the credential in the format ``username:password`` encoded in ``base64`` in the ``Authorization`` HTTP header.
+
+#### `JWTAuthBackend`
+
+Implements [JSON Web Token (JWT) standard](https://tools.ietf.org/html/rfc7519) where clients should authenticate by passing the token key in the `Authorization` HTTP header. This backend makes use of the
+[Authlib](https://authlib.org) library.
 
 #### `GenericAuthBackend`
 
