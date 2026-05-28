@@ -1,21 +1,12 @@
 # based on sqlalchemy's lib/sqlalchemy/util/_concurrency_py3k.py
+from contextvars import copy_context
 import sys
-from typing import Any
+from typing import Any, NoReturn
 from typing import Callable
 from typing import Coroutine
 
 try:
     import greenlet
-
-    try:
-        from contextvars import copy_context as _copy_context
-
-        # If greenlet.gr_context is present in current version of greenlet,
-        # it will be set with a copy of the current context on creation.
-        # Refs: https://github.com/python-greenlet/greenlet/pull/198
-        getattr(greenlet.greenlet, "gr_context")
-    except (ImportError, AttributeError):
-        _copy_context = None
 
     # implementation based on snaury gist at
     # https://gist.github.com/snaury/202bf4f22c41ca34e56297bae5f33fef
@@ -24,8 +15,7 @@ try:
         def __init__(self, fn, driver):
             greenlet.greenlet.__init__(self, fn, driver)
             self.driver = driver
-            if _copy_context is not None:
-                self.gr_context = _copy_context()
+            self.gr_context = copy_context()
 
     def await_(awaitable: Coroutine) -> Any:
         """Awaits an async function in a sync method.
@@ -56,7 +46,7 @@ try:
         # then returned to the caller (or raised as error)
         return current.driver.switch(awaitable)
 
-    async def greenlet_spawn(fn: Callable, *args, **kwargs) -> Any:
+    async def greenlet_spawn(fn: Callable, *args: Any, **kwargs: Any) -> Any:
         """Runs a sync function ``fn`` in a new greenlet.
 
         The sync function can then use :func:`await_` to wait for async functions.
@@ -94,17 +84,13 @@ try:
         return result
 
 except ImportError:  # pragma: no cover
-    greenlet = None
+    greenlet = None  # type: ignore[assignment]
 
-    def _not_implemented():
-        # this conditional is to prevent pylance from considering
-        # greenlet_spawn() etc as "no return" and dimming out code below it
-        if greenlet:
-            return None
-        raise ValueError("Greenlet is required to use this function")
+    def _not_implemented() -> NoReturn:
+        raise ValueError("Greesnlet is required to use this function")
 
-    def await_(awaitable):
+    def await_(awaitable: Coroutine) -> Any:
         _not_implemented()
 
-    async def greenlet_spawn(fn, *args, **kw):
+    async def greenlet_spawn(fn: Callable, *args: Any, **kwargs: Any) -> Any:
         _not_implemented()

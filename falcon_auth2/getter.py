@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import Iterable
+from typing import ClassVar, Iterable
 from typing import Optional
 from typing import Tuple
 
@@ -13,7 +13,7 @@ from .utils import greenlet_spawn
 try:
     from falcon.asgi import Request as AsyncRequest
 except ImportError:  # pragma: no cover
-    AsyncRequest = type(None)
+    AsyncRequest = type(None)  # type: ignore
 
 
 class Getter(metaclass=ABCMeta):
@@ -25,7 +25,7 @@ class Getter(metaclass=ABCMeta):
         In these cases the sync version may just raise an exception.
     """
 
-    async_calls_sync_load = None
+    async_calls_sync_load: ClassVar[bool | None] = None
     """Indicates if this Getter has an async load implementation that is not just a fallback to
     sync :meth:`.load` method, like the default :meth:`.load_async` method.
 
@@ -200,8 +200,10 @@ class MultiGetter(Getter):
 
     async_calls_sync_load = True
 
+    getters: Tuple[Getter, ...]
+
     def __init__(self, getters: Iterable[Getter]):
-        self.getters: Tuple[Getter] = tuple(getters)
+        self.getters = tuple(getters)
         if len(self.getters) < 2:
             raise ValueError("Must pass more than one getter")
         if any(not isinstance(g, Getter) for g in self.getters):
