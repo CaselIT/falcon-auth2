@@ -56,7 +56,7 @@ class BasicAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable[..., Any],
+        user_loader: Callable[[RequestAttributes, str, str], Any],
         *,
         auth_header_type: str = "Basic",
         getter: Getter | None = None,

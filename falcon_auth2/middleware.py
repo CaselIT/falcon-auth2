@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from collections.abc import Mapping
 from typing import Any
 
 from falcon import Request
@@ -82,7 +83,7 @@ class AuthMiddleware:
         setattr(req.context, self.context_attr, results)
 
     def process_resource(
-        self, req: Request, resp: Response, resource: Any, params: dict[str, Any]
+        self, req: Request, resp: Response, resource: Any, params: Mapping[str, Any]
     ) -> None:
         """Called by falcon when processing a resource.
 
@@ -92,7 +93,7 @@ class AuthMiddleware:
         self._process_resource(RequestAttributes(req, resp, resource, params, False))
 
     async def process_resource_async(
-        self, req: Request, resp: Response, resource: Any, params: dict[str, Any]
+        self, req: Request, resp: Response, resource: Any, params: Mapping[str, Any]
     ) -> None:
         """Called by async falcon when processing a resource.
 

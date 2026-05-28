@@ -29,8 +29,10 @@ def find_user(user_dict):
 
     return m
 
+
 def utcnow():
     return datetime.now(timezone.utc)
+
 
 class TestJWTAuth(ResourceFixture):
     def test_import_error(self, monkeypatch):
