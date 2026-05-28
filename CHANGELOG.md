@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.0]
+- Ensure challenges are passed to single getter by ``MultiGetter``.
+
 ## [0.1.0]
 - Add JWT support.
 

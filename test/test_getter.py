@@ -253,6 +253,23 @@ class TestMultiGetter:
         assert g.load(req) == "foo"
         assert await g.load_async(req) == "foo"
 
+    def test_with_challenges(self):
+        g1 = getter.ParamGetter("foo")
+
+        class FooGetter(getter.Getter):
+            challenges = None
+
+            def load(self, req, *, challenges=None):
+                self.challenges = challenges
+                return "foo"
+
+        g2 = FooGetter()
+        g = getter.MultiGetter([g1, g2])
+
+        req = make_request(query_string="a=bar")
+        assert g.load(req, challenges=["a"]) == "foo"
+        assert g2.challenges == ["a"]
+
     @pytest.mark.asyncio
     async def test_custom_async(self):
         g1 = getter.ParamGetter("skip")

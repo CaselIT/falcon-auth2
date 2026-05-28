@@ -214,9 +214,9 @@ class MultiGetter(Getter):
         for g in self.getters:
             try:
                 if is_async and not g.async_calls_sync_load:
-                    return await_(g.load_async(req))
+                    return await_(g.load_async(req, challenges=challenges))
                 else:
-                    return g.load(req)
+                    return g.load(req, challenges=challenges)
             except BackendNotApplicable:
                 pass
         raise BackendNotApplicable(
