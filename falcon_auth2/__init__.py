@@ -11,4 +11,4 @@ from .getter import ParamGetter
 from .middleware import AuthMiddleware
 from .utils import RequestAttributes
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
