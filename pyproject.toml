@@ -57,4 +57,7 @@ target-version = ["py36"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-exclude = "test"
+files = [
+    "falcon_auth2",
+    "examples",
+]
