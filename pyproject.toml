@@ -53,3 +53,8 @@ include = ["falcon_auth2", "falcon_auth2.*"]
 [tool.black]
 line-length = 100
 target-version = ["py36"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+exclude = "test"

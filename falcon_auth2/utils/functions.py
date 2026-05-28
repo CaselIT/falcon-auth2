@@ -5,7 +5,7 @@ from collections.abc import Callable
 from .asyncio_compat import await_
 
 
-def check_backend(backend: Any):
+def check_backend(backend: Any) -> None:
     "Test if input is an AuthBackend"
     from ..backends import AuthBackend
 
@@ -15,7 +15,7 @@ def check_backend(backend: Any):
         )
 
 
-def check_getter(getter: Any):
+def check_getter(getter: Any) -> None:
     "Test if input is a Getter"
     from ..getter import Getter
 
@@ -27,9 +27,9 @@ def call_maybe_async(
     support_async: bool,
     function_is_async: bool | None,
     err_msg: str,
-    function: Callable,
-    *args,
-    **kwargs,
+    function: Callable[..., Any],
+    *args: Any,
+    **kwargs: Any,
 ) -> tuple[Any, bool]:
     """Calls a function and waits for the result if it is async.
 

@@ -1,5 +1,6 @@
 import base64
 from collections.abc import Callable
+from typing import Any
 
 from falcon import Request
 
@@ -55,7 +56,7 @@ class BasicAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable,
+        user_loader: Callable[..., Any],
         *,
         auth_header_type: str = "Basic",
         getter: Getter | None = None,
@@ -66,7 +67,7 @@ class BasicAuthBackend(BaseAuthBackend):
         self.auth_header_type = auth_header_type
         self.getter = getter or AuthHeaderGetter(auth_header_type)
 
-    def _extract_credentials(self, req: Request, is_async: bool):
+    def _extract_credentials(self, req: Request, is_async: bool) -> tuple[str, str]:
         if is_async and not self.getter.async_calls_sync_load:
             auth_data = await_(self.getter.load_async(req, challenges=self.challenges))
         else:
@@ -83,7 +84,7 @@ class BasicAuthBackend(BaseAuthBackend):
 
         return username, password
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[str, Any]:
         "Authenticates the request and returns the authenticated user."
         username, password = self._extract_credentials(attributes[0], attributes[-1])
         return {"user": self.load_user(attributes, username, password)}

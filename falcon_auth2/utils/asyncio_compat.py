@@ -12,12 +12,12 @@ try:
     # https://gist.github.com/snaury/202bf4f22c41ca34e56297bae5f33fef
     # Issue for context: https://github.com/python-greenlet/greenlet/issues/173
     class _AsyncIoGreenlet(greenlet.greenlet):
-        def __init__(self, fn, driver):
+        def __init__(self, fn: Callable[..., Any], driver: greenlet.greenlet | None) -> None:
             greenlet.greenlet.__init__(self, fn, driver)
             self.driver = driver
             self.gr_context = copy_context()
 
-    def await_(awaitable: Coroutine) -> Any:
+    def await_(awaitable: Coroutine[Any, Any, Any]) -> Any:
         """Awaits an async function in a sync method.
 
         The sync method must be insice a :func:`greenlet_spawn` context.
@@ -44,9 +44,9 @@ try:
         # a coroutine to run. Once the awaitable is done, the driver greenlet
         # switches back to this greenlet with the result of awaitable that is
         # then returned to the caller (or raised as error)
-        return current.driver.switch(awaitable)
+        return current.driver.switch(awaitable)  # type: ignore[union-attr]
 
-    async def greenlet_spawn(fn: Callable, *args: Any, **kwargs: Any) -> Any:
+    async def greenlet_spawn(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Runs a sync function ``fn`` in a new greenlet.
 
         The sync function can then use :func:`await_` to wait for async functions.
@@ -89,8 +89,8 @@ except ImportError:  # pragma: no cover
     def _not_implemented() -> NoReturn:
         raise ValueError("Greesnlet is required to use this function")
 
-    def await_(awaitable: Coroutine) -> Any:
+    def await_(awaitable: Coroutine[Any, Any, Any]) -> Any:
         _not_implemented()
 
-    async def greenlet_spawn(fn: Callable, *args: Any, **kwargs: Any) -> Any:
+    async def greenlet_spawn(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         _not_implemented()

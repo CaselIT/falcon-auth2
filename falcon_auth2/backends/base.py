@@ -19,7 +19,7 @@ class AuthBackend(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         """Authenticates the request and returns the authenticated user.
 
         If a request cannot be authenticated a backed should raise:
@@ -68,15 +68,15 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             Defaults to ``None``.
     """
 
-    def __init__(self, user_loader: Callable, *, challenges: Iterable[str] | None = None):
+    def __init__(self, user_loader: Callable[..., Any], *, challenges: Iterable[str] | None = None):
         if not callable(user_loader):
             raise TypeError(f"Expected {user_loader} to be a callable object")
 
         self.user_loader = user_loader
-        self.user_loader_is_async = None
+        self.user_loader_is_async: bool | None = None
         self.challenges = tuple(challenges) if challenges else None
 
-    def load_user(self, attributes: RequestAttributes, *args, **kwargs) -> Any:
+    def load_user(self, attributes: RequestAttributes, *args: Any, **kwargs: Any) -> Any:
         """Invokes the provided ``user_loader`` callable to allow the app to retrieve
         the user record. If no such record is found, raises a :class:`~.UserNotFound`
         exception.
@@ -133,7 +133,7 @@ class NoAuthBackend(BaseAuthBackend):
             Defaults to ``None``.
     """
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         "Authenticates the request and returns the authenticated user."
         return {"user": self.load_user(attributes)}
 
@@ -176,7 +176,7 @@ class GenericAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable,
+        user_loader: Callable[..., Any],
         getter: Getter,
         *,
         payload_key: str | None = None,
@@ -190,7 +190,7 @@ class GenericAuthBackend(BaseAuthBackend):
         self.getter = getter
         self.payload_key = payload_key
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         "Authenticates the request and returns the authenticated user."
         is_async = attributes[4]
         if is_async and not self.getter.async_calls_sync_load:

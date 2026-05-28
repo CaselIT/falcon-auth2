@@ -33,7 +33,7 @@ class Getter(metaclass=ABCMeta):
     (by setting it to a valued different than ``None``).
     """
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         # Use dict instead of accessing it directly to properly control nested subclasses
         if cls.__dict__.get("async_calls_sync_load") is None:
             cls.async_calls_sync_load = cls.load_async == Getter.load_async

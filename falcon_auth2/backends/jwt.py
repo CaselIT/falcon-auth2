@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 from falcon import Request
 
@@ -80,13 +81,13 @@ class JWTAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable,
-        key: str | bytes | dict | Callable[[dict, dict], str | bytes],
+        user_loader: Callable[..., Any],
+        key: str | bytes | dict[Any, Any] | Callable[[dict[Any, Any], dict[Any, Any]], str | bytes],
         *,
         auth_header_type: str = "Bearer",
         getter: Getter | None = None,
         algorithms: str | list[str] | None = "HS256",
-        claims_options: dict | None = None,
+        claims_options: dict[str, dict[str, bool]] | None = None,
         leeway: int = 0,
     ):
         if not has_authlib:
@@ -103,7 +104,7 @@ class JWTAuthBackend(BaseAuthBackend):
         self.leeway = leeway
         self.claims_options = self.default_claims() if claims_options is None else claims_options
 
-    def default_claims(self):
+    def default_claims(self) -> dict[str, dict[str, bool]]:
         """Returns the default claims to verify in the tokens.
 
         The default claims check that the 'iss', 'sub', 'aud', 'exp', 'nbf', 'iat' are present in
@@ -125,7 +126,7 @@ class JWTAuthBackend(BaseAuthBackend):
             "iat": {"essentail": True},
         }
 
-    def _validate_token(self, req: Request, is_async: bool):
+    def _validate_token(self, req: Request, is_async: bool) -> dict[str, Any]:
         if is_async and not self.getter.async_calls_sync_load:
             token = await_(self.getter.load_async(req, challenges=self.challenges))
         else:
@@ -142,7 +143,7 @@ class JWTAuthBackend(BaseAuthBackend):
 
         return decoded
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[str, Any]:
         "Authenticates the request and returns the authenticated user."
         payload = self._validate_token(attributes[0], attributes[-1])
         return {"user": self.load_user(attributes, payload)}
