@@ -16,12 +16,14 @@ if TYPE_CHECKING:
     from falcon import Request
 
 try:
-    from authlib.jose import JoseError
-    from authlib.jose import JsonWebToken
+    from joserfc import jws
+    from joserfc import jwk
+    from joserfc import jwt
+    from joserfc.errors import JoseError
 
-    has_authlib = True
+    has_joserfc = True
 except ImportError:  # pragma: no cover
-    has_authlib = False
+    has_joserfc = False
 
 
 class JWTAuthBackend(BaseAuthBackend):
@@ -30,9 +32,9 @@ class JWTAuthBackend(BaseAuthBackend):
     Clients should authenticate by passing the token key in the `Authorization`
     HTTP header, prepending it with the type specified in the setting ``auth_header_type``.
 
-    This backend uses the `Authlib <https://authlib.org>`_ library to handle the validation
-    of the tokens. See also its `JSON Web Token (JWT)
-    <https://docs.authlib.org/en/latest/jose/jwt.html>`_ documentation for additional
+    This backend uses the `joserfc <https://jose.authlib.org/en/>`_ library to handle
+    the validation of the tokens. See also its `JSON Web Token (JWT)
+    <https://jose.authlib.org/en/guide/jwt/>`_ documentation for additional
     details on the authentication library features.
 
     Args:
@@ -50,14 +52,11 @@ class JWTAuthBackend(BaseAuthBackend):
             Note:
                 Exceptions raised in this callable are not handled directly, and are surfaced to
                 falcon.
-        key (str, bytes, dict, Callable): The key to use to decode the tokens.
-            This parameter is passed to the ``JsonWebToken.decode()`` method and is used to verify
+        key (KeyFlexible): The key to use to decode the tokens.
+            This parameter is passed to the ``joserfc.jwt.decode()`` method and is used to verify
             the signature of the token.
-            A key can be passed as string or bytes. Dynamic keys are also supported
-            by passing a "JWK set" dict or a callable that is called with the token header
-            and payload and returns the key to use to validate the current token signature.
-            See `Use dynamic keys
-            <https://docs.authlib.org/en/latest/jose/jwt.html#use-dynamic-keys>`_
+            A key can be passed as static key or a key set or a callable.
+            See `The key parameter <https://jose.authlib.org/en/guide/jwt/#the-key-parameter>`_
             for additional details on the supported values.
     Keyword Args:
         auth_header_type (string, optional): The type of authentication required in the
@@ -86,16 +85,16 @@ class JWTAuthBackend(BaseAuthBackend):
     def __init__(
         self,
         user_loader: Callable[[RequestAttributes, dict[str, Any]], Any],
-        key: str | bytes | dict[Any, Any] | Callable[[dict[Any, Any], dict[Any, Any]], str | bytes],
+        key: jwk.KeyFlexible,
         *,
         auth_header_type: str = "Bearer",
         getter: Getter | None = None,
         algorithms: str | list[str] | None = "HS256",
-        claims_options: dict[str, dict[str, bool]] | None = None,
+        claims_options: dict[str, jwt.ClaimsOption] | None = None,
         leeway: int = 0,
     ):
-        if not has_authlib:
-            raise ImportError(f"Authlib is required to use the {self.__class__.__name__} backend.")
+        if not has_joserfc:
+            raise ImportError(f"joserfc is required to use the {self.__class__.__name__} backend.")
         super().__init__(user_loader, challenges=(auth_header_type,))
         if getter:
             check_getter(getter)
@@ -103,22 +102,24 @@ class JWTAuthBackend(BaseAuthBackend):
         self.getter = getter or AuthHeaderGetter(auth_header_type)
         if isinstance(algorithms, str):
             algorithms = [algorithms]
-        self.jwt = JsonWebToken(algorithms)
-        self.key: Any = key
-        self.leeway = leeway
-        self.claims_options = self.default_claims() if claims_options is None else claims_options
+        self.jws_registry = jws.JWSRegistry(algorithms=algorithms)
+        self.key = key
+        self.claims = jwt.JWTClaimsRegistry(
+            now=None,
+            leeway=leeway,
+            **(self.default_claims() if claims_options is None else claims_options),
+        )
 
-    def default_claims(self) -> dict[str, dict[str, bool]]:
+    def default_claims(self) -> dict[str, jwt.ClaimsOption]:
         """Returns the default claims to verify in the tokens.
 
         The default claims check that the 'iss', 'sub', 'aud', 'exp', 'nbf', 'iat' are present in
         the token.
 
         Subclasses can choose to override this method. The claims may also be passed using the
-        ``claims_options`` parameter when instanciating this class.
+        ``claims_options`` parameter when instantiating this class.
 
-        See `JWT Payload Claims Validation
-        <https://docs.authlib.org/en/latest/jose/jwt.html#jwt-payload-claims-validation>`_
+        See `Validate claims <https://jose.authlib.org/en/guide/jwt/#validate-claims>`_
         for additional details on the ``claims_options`` format.
         """
         return {
@@ -127,7 +128,7 @@ class JWTAuthBackend(BaseAuthBackend):
             "aud": {"essential": True},
             "exp": {"essential": True},
             "nbf": {"essential": True},
-            "iat": {"essentail": True},
+            "iat": {"essential": True},
         }
 
     def _validate_token(self, req: Request, is_async: bool) -> dict[str, Any]:
@@ -139,15 +140,15 @@ class JWTAuthBackend(BaseAuthBackend):
             token = self.getter.load(req, challenges=self.challenges)
 
         try:
-            decoded = self.jwt.decode(token, key=self.key, claims_options=self.claims_options)
-            decoded.validate(leeway=self.leeway)
+            decoded = jwt.decode(token, key=self.key, registry=self.jws_registry)
+            self.claims.validate(decoded.claims)
         except JoseError as e:
             raise BackendNotApplicable(
                 description=f"Invalid Authorization. Unable to decode or verify token. {e}",
                 challenges=self.challenges,
             )
 
-        return decoded
+        return decoded.claims
 
     def authenticate(self, attributes: RequestAttributes) -> dict[str, Any]:
         "Authenticates the request and returns the authenticated user."

@@ -12,17 +12,17 @@ from falcon_auth2.backends import JWTAuthBackend
 from .conftest import ConfigurableGetter
 from .conftest import ResourceFixture
 
-pytest.importorskip("authlib", reason="Authlib is required to run JWTAuthBackend tests")
+pytest.importorskip("joserfc", reason="Joserfc is required to run JWTAuthBackend tests")
 if True:  # avoid zimport reformatting these
-    from authlib.jose import JsonWebToken
-    from authlib.jose import jwt
+    from joserfc import jwk
+    from joserfc import jwt
 
 
 def jwt_token(key, payload, header=None, prefix="Bearer"):
     header = header or {"alg": "HS256"}
-    token = jwt.encode(header, payload, key)
+    token = jwt.encode(header, payload, jwk.import_key(key, "oct"))
 
-    return f"{prefix} {token.decode()}" if prefix else token.decode()
+    return f"{prefix} {token}" if prefix else token
 
 
 def find_user(user_dict):
@@ -39,8 +39,8 @@ def utcnow():
 
 class TestJWTAuth(ResourceFixture):
     def test_import_error(self, monkeypatch):
-        monkeypatch.setattr("falcon_auth2.backends.jwt.has_authlib", False)
-        with pytest.raises(ImportError, match="Authlib is required"):
+        monkeypatch.setattr("falcon_auth2.backends.jwt.has_joserfc", False)
+        with pytest.raises(ImportError, match="joserfc is required"):
             JWTAuthBackend(find_user, "key")
 
     def test_init(self):
@@ -52,9 +52,8 @@ class TestJWTAuth(ResourceFixture):
         assert isinstance(jab.getter, AuthHeaderGetter)
         assert jab.getter.header_key == "Authorization"
         assert jab.getter.auth_header_type == "bearer"
-        assert isinstance(jab.jwt, JsonWebToken)
-        assert jab.claims_options == jab.default_claims()
-        assert jab.leeway == 0
+        assert jab.claims.options == jab.default_claims()
+        assert jab.claims.leeway == 0
 
         jab = JWTAuthBackend(find_user, "key", auth_header_type="CustomType")
         assert jab.user_loader == find_user
@@ -76,24 +75,24 @@ class TestJWTAuth(ResourceFixture):
         assert jab.user_loader == find_user
         assert jab.getter is g
         assert jab.challenges == ("foobar",)
-        assert jab.claims_options == {"iss": {"essential": True}}
-        assert jab.leeway == 42
+        assert jab.claims.options == {"iss": {"essential": True}}
+        assert jab.claims.leeway == 42
 
     def test_init_algorithm(self, monkeypatch):
         call = []
 
-        def mock(alg):
-            call.append(alg)
+        def mock(**kwargs):
+            call.append(kwargs)
 
-        monkeypatch.setattr("falcon_auth2.backends.jwt.JsonWebToken", mock)
+        monkeypatch.setattr("joserfc.jws.JWSRegistry", mock)
         JWTAuthBackend(find_user, "key")
-        assert call == [["HS256"]]
+        assert call == [{"algorithms": ["HS256"]}]
         call.clear()
         JWTAuthBackend(find_user, "key", algorithms="RS512")
-        assert call == [["RS512"]]
+        assert call == [{"algorithms": ["RS512"]}]
         call.clear()
         JWTAuthBackend(find_user, "key", algorithms=["RS512", "RS256"])
-        assert call == [["RS512", "RS256"]]
+        assert call == [{"algorithms": ["RS512", "RS256"]}]
 
     def test_init_raises(self):
         with pytest.raises(TypeError, match="to be a callable object"):
@@ -103,12 +102,14 @@ class TestJWTAuth(ResourceFixture):
 
     @pytest.fixture
     def key(self):
-        return "key"
+        return "key" * 30
 
     @pytest.fixture
     def backend(self, user_dict, key):
         return JWTAuthBackend(
-            find_user(user_dict), key, claims_options={"sub": {"essential": True}}
+            find_user(user_dict),
+            jwk.import_key(key, "oct"),
+            claims_options={"sub": {"essential": True}},
         )
 
     def test_user(self, user_dict, client, resource, key):
@@ -137,7 +138,7 @@ class TestJWTAuth(ResourceFixture):
         def backend(self, user_dict, key):
             return JWTAuthBackend(
                 find_user(user_dict),
-                key,
+                jwk.import_key(key, "oct"),
                 claims_options={"sub": {"essential": True}},
                 auth_header_type="CustomType",
             )
@@ -163,7 +164,7 @@ class TestJWTAuth(ResourceFixture):
             ("-", "Must start with"),
             (lambda key: jwt_token(key, {"sub": "2"}, prefix="Foo"), "Must start with"),
             (lambda key: jwt_token(key, {"sub": "99"}), "User not found"),
-            (jwt_token("another-key", {"sub": "1"}), "bad_signature"),
+            (jwt_token("another-key" * 10, {"sub": "1"}), "bad_signature"),
             (lambda key: jwt_token(key, {"iss": "99"}), "missing_claim"),
             ("Bearer", "Value Missing"),
         ),
@@ -196,8 +197,8 @@ class TestJWTAuth(ResourceFixture):
         assert req.status == falcon.HTTP_OK
 
     def test_default_claims_err(self, backend, client, key, user_dict):
-        backend.claims_options = backend.default_claims()
-        for key in ("iss", "sub", "aud", "exp", "nbf", "iat"):
+        backend.claims.options = backend.default_claims()
+        for attr in ("iss", "sub", "aud", "exp", "nbf", "iat"):
             payload = {
                 "iss": "my-iss",
                 "sub": "1",
@@ -206,9 +207,9 @@ class TestJWTAuth(ResourceFixture):
                 "nbf": utcnow(),
                 "iat": utcnow(),
             }
-            del payload[key]
+            del payload[attr]
             req = client.simulate_post("/auth", headers={"Authorization": jwt_token(key, payload)})
-            assert req.status == falcon.HTTP_UNAUTHORIZED
+            assert req.status == falcon.HTTP_UNAUTHORIZED, attr
 
     def test_default_claims_leeway(self, backend, client, key):
         backend.claims_options = backend.default_claims()
@@ -222,27 +223,27 @@ class TestJWTAuth(ResourceFixture):
         }
         req = client.simulate_post("/auth", headers={"Authorization": jwt_token(key, payload)})
         assert req.status == falcon.HTTP_UNAUTHORIZED
-        backend.leeway = 60
+        backend.claims.leeway = 60
         req = client.simulate_post("/auth", headers={"Authorization": jwt_token(key, payload)})
         assert req.status == falcon.HTTP_OK
 
     def test_dynamic_key(self, backend, client, key):
         called = False
 
-        def get_key(h, p):
+        def get_key(cs):
             nonlocal called
             called = True
-            assert p == payload
+            h = cs.headers()
             assert "kid" in h
-            return h["kid"]
+            return jwk.import_key(h["kid"] * 10, "oct")
 
         backend.key = get_key
         payload = {"sub": "1", "aud": "my-aud"}
-        token = jwt_token("key-key", payload, header={"kid": "key-key", "alg": "HS256"})
+        token = jwt_token("key-key" * 10, payload, header={"kid": "key-key", "alg": "HS256"})
         req = client.simulate_post("/auth", headers={"Authorization": token})
-        assert req.status == falcon.HTTP_OK
+        assert req.status == falcon.HTTP_OK, req.text
         assert called
-        token = jwt_token("other-key", payload, header={"kid": "other-key", "alg": "HS256"})
+        token = jwt_token("other-key" * 10, payload, header={"kid": "other-key", "alg": "HS256"})
         req = client.simulate_post("/auth", headers={"Authorization": token})
         assert req.status == falcon.HTTP_OK
 
