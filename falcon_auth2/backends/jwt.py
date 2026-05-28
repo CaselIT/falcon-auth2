@@ -81,7 +81,7 @@ class JWTAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable[..., Any],
+        user_loader: Callable[[RequestAttributes, dict[str, Any]], Any],
         key: str | bytes | dict[Any, Any] | Callable[[dict[Any, Any], dict[Any, Any]], str | bytes],
         *,
         auth_header_type: str = "Bearer",

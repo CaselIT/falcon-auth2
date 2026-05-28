@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import ClassVar
 from collections.abc import Iterable
+from typing import ClassVar
 
 from falcon import Request
 

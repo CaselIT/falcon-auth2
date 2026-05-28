@@ -1,9 +1,15 @@
 # based on sqlalchemy's lib/sqlalchemy/util/_concurrency_py3k.py
+from collections.abc import Callable
 from contextvars import copy_context
 import sys
-from typing import Any, NoReturn
-from collections.abc import Callable
-from collections.abc import Coroutine
+from typing import Any
+from typing import Awaitable
+from typing import NoReturn
+from typing import ParamSpec
+from typing import TypeVar
+
+_T = TypeVar("_T")
+_P = ParamSpec("_P")
 
 try:
     import greenlet
@@ -17,14 +23,14 @@ try:
             self.driver = driver
             self.gr_context = copy_context()
 
-    def await_(awaitable: Coroutine[Any, Any, Any]) -> Any:
+    def await_(awaitable: Awaitable[_T]) -> _T:
         """Awaits an async function in a sync method.
 
         The sync method must be insice a :func:`greenlet_spawn` context.
         :func:`await_` calls cannot be nested.
 
         Args:
-            awaitable (Coroutine): The coroutine to call.
+            awaitable (Awaitable): The awaitable to call.
 
         Raises:
             RuntimeError: If ``await_`` was called outside a :func:`greenlet_spawn` context or
@@ -44,9 +50,9 @@ try:
         # a coroutine to run. Once the awaitable is done, the driver greenlet
         # switches back to this greenlet with the result of awaitable that is
         # then returned to the caller (or raised as error)
-        return current.driver.switch(awaitable)  # type: ignore[union-attr]
+        return current.driver.switch(awaitable)  # type: ignore[union-attr,no-any-return]
 
-    async def greenlet_spawn(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    async def greenlet_spawn(fn: Callable[_P, _T], *args: _P.args, **kwargs: _P.kwargs) -> _T:
         """Runs a sync function ``fn`` in a new greenlet.
 
         The sync function can then use :func:`await_` to wait for async functions.
@@ -81,7 +87,7 @@ try:
         finally:
             # clean up to avoid cycle resolution by gc
             del context.driver
-        return result
+        return result  # type: ignore[no-any-return]
 
 except ImportError:  # pragma: no cover
     greenlet = None  # type: ignore[assignment]
@@ -89,8 +95,8 @@ except ImportError:  # pragma: no cover
     def _not_implemented() -> NoReturn:
         raise ValueError("Greesnlet is required to use this function")
 
-    def await_(awaitable: Coroutine[Any, Any, Any]) -> Any:
+    def await_(awaitable: Awaitable[_T]) -> _T:
         _not_implemented()
 
-    async def greenlet_spawn(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    async def greenlet_spawn(fn: Callable[_P, _T], *args: _P.args, **kwargs: _P.kwargs) -> _T:
         _not_implemented()

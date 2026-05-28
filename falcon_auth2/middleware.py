@@ -1,5 +1,5 @@
-from typing import Any
 from collections.abc import Iterable
+from typing import Any
 
 from falcon import Request
 from falcon import Response

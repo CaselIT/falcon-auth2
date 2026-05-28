@@ -1,6 +1,8 @@
 from asyncio import iscoroutine
-from typing import Any
 from collections.abc import Callable
+from typing import Any
+from typing import ParamSpec
+from typing import TypeVar
 
 from .asyncio_compat import await_
 
@@ -23,14 +25,18 @@ def check_getter(getter: Any) -> None:
         raise TypeError(f"Invalid getter {getter}. Expected a subclass of Getter")
 
 
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
+
+
 def call_maybe_async(
     support_async: bool,
     function_is_async: bool | None,
     err_msg: str,
-    function: Callable[..., Any],
-    *args: Any,
-    **kwargs: Any,
-) -> tuple[Any, bool]:
+    function: Callable[_P, _T],
+    *args: _P.args,
+    **kwargs: _P.kwargs,
+) -> tuple[_T, bool]:
     """Calls a function and waits for the result if it is async.
 
     Args:
@@ -55,7 +61,7 @@ def call_maybe_async(
     if function_is_async:
         if support_async:
             # result is a coroutine here. await it
-            result = await_(result)
+            result = await_(result)  # type: ignore[arg-type]
         else:
             raise TypeError(
                 f"Cannot use async {err_msg} {function} when"

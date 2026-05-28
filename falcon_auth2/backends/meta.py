@@ -48,8 +48,8 @@ class CallBackBackend(AuthBackend):
         self,
         backend: AuthBackend,
         *,
-        on_success: Callable[..., Any] | None = None,
-        on_failure: Callable[..., Any] | None = None,
+        on_success: Callable[[RequestAttributes, AuthBackend, dict[str, Any]], Any] | None = None,
+        on_failure: Callable[[RequestAttributes, AuthBackend, Exception], Any] | None = None,
     ):
         check_backend(backend)
         if on_success and not callable(on_success):
@@ -119,11 +119,14 @@ class MultiAuthBackend(AuthBackend):
     """
 
     def __init__(
-        self, backends: Iterable[AuthBackend], *, continue_on: Callable[..., Any] | None = None
+        self,
+        backends: Iterable[AuthBackend],
+        *,
+        continue_on: Callable[[AuthBackend, Exception], bool] | None = None,
     ):
         self.backends = tuple(backends)
         if len(self.backends) < 2:
-            raise ValueError("Must pass more than two backend")
+            raise ValueError("Must pass at least two backends")
         if any(not isinstance(b, AuthBackend) for b in self.backends):
             raise TypeError("All backends must inherit from `AuthBackend`")
         if continue_on and not callable(continue_on):

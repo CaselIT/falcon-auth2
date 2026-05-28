@@ -1,8 +1,8 @@
 import falcon
+from falcon import App
 from falcon import testing
 import pytest
 
-from falcon import App
 from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import RequestAttributes
 from falcon_auth2.backends import AuthBackend
