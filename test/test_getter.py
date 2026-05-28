@@ -188,14 +188,19 @@ class TestCookieGetter:
 
         assert g.cookie_name == "foo"
 
-    @pytest.mark.asyncio
-    async def test_ok(self):
+    def test_ok(self):
         g = getter.CookieGetter("foo")
         req = make_request(headers={"Cookie": "foo=bar"})
         assert g.load(req) == "bar"
-        assert await g.load_async(req) == "bar"
         req = make_request(headers={"Cookie": "foo=bar;bar=foo"})
         assert g.load(req) == "bar"
+
+    @pytest.mark.asyncio
+    async def test_ok_async(self):
+        g = getter.CookieGetter("foo")
+        req = make_request(headers={"Cookie": "foo=bar"})
+        assert await g.load_async(req) == "bar"
+        req = make_request(headers={"Cookie": "foo=bar;bar=foo"})
         assert await g.load_async(req) == "bar"
 
     @pytest.mark.parametrize("challenges", (None, ("foo", "bar")))
@@ -237,8 +242,22 @@ class TestMultiGetter:
         with pytest.raises(TypeError, match="All getter must inherit from Getter"):
             getter.MultiGetter([getter.CookieGetter("foo"), "foo"])
 
+    def test_ok(self):
+        g1 = getter.ParamGetter("foo")
+        g2 = getter.CookieGetter("bar")
+        g = getter.MultiGetter([g1, g2])
+
+        req = make_request(query_string="foo=bar")
+        assert g.load(req) == "bar"
+        req = make_request(headers={"Cookie": "bar=foo"})
+        assert g.load(req) == "foo"
+        req = make_request(query_string="foo=bar", headers={"Cookie": "bar=foo"})
+        assert g.load(req) == "bar"
+        g = getter.MultiGetter([g2, g1])
+        assert g.load(req) == "foo"
+
     @pytest.mark.asyncio
-    async def test_ok(self):
+    async def test_ok_async(self, require_async):
         g1 = getter.ParamGetter("foo")
         g2 = getter.CookieGetter("bar")
         g = getter.MultiGetter([g1, g2])
@@ -274,7 +293,7 @@ class TestMultiGetter:
         assert g2.challenges == ["a"]
 
     @pytest.mark.asyncio
-    async def test_custom_async(self):
+    async def test_custom_async(self, require_async):
         g1 = getter.ParamGetter("skip")
         g2 = ImplAsync()
 
@@ -297,7 +316,7 @@ class TestMultiGetter:
 
     @pytest.mark.parametrize("ch", (None, ("foo", "bar")))
     @pytest.mark.asyncio
-    async def test_error(self, patch_exception_str, ch):
+    async def test_error(self, patch_exception_str, ch, require_async):
         g1 = getter.ParamGetter("foo")
         g2 = getter.CookieGetter("bar")
         g = getter.MultiGetter([g1, g2])

@@ -29,9 +29,15 @@ def user():
     return User(id=1, user="foo", pwd="bar")
 
 
+@pytest.fixture()
+def require_async():
+    pytest.importorskip("greenlet", reason="greenlet is required to run async tests")
+
+
 def create_app(auth_middleware, resource, asgi):
 
     if asgi:
+        pytest.importorskip("greenlet", reason="greenlet is required to run async tests")
         from falcon.asgi import App
 
         async def handle(req, resp, ex, params):

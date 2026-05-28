@@ -2,8 +2,6 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 
-from authlib.jose import JsonWebToken
-from authlib.jose import jwt
 import falcon
 import pytest
 
@@ -13,6 +11,11 @@ from falcon_auth2 import RequestAttributes
 from falcon_auth2.backends import JWTAuthBackend
 from .conftest import ConfigurableGetter
 from .conftest import ResourceFixture
+
+pytest.importorskip("authlib", reason="Authlib is required to run JWTAuthBackend tests")
+if True:  # avoid zimport reformatting these
+    from authlib.jose import JsonWebToken
+    from authlib.jose import jwt
 
 
 def jwt_token(key, payload, header=None, prefix="Bearer"):

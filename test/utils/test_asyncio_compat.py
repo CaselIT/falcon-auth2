@@ -19,6 +19,7 @@ def go(*fns):
     return sum(await_(fn()) for fn in fns)
 
 
+@pytest.mark.usefixtures("require_async")
 class TestAsyncioCompat:
     @pytest.mark.asyncio
     async def test_ok(self):
