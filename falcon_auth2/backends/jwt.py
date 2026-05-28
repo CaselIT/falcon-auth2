@@ -100,7 +100,7 @@ class JWTAuthBackend(BaseAuthBackend):
         if isinstance(algorithms, str):
             algorithms = [algorithms]
         self.jwt = JsonWebToken(algorithms)
-        self.key = key
+        self.key: Any = key
         self.leeway = leeway
         self.claims_options = self.default_claims() if claims_options is None else claims_options
 

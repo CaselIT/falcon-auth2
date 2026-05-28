@@ -52,7 +52,7 @@ basic_backend = BasicAuthBackend(basic_user_loader)
 jwt_backend = JWTAuthBackend(jwt_user_loader, key)
 auth_backend = MultiAuthBackend((basic_backend, jwt_backend))
 auth_middleware = AuthMiddleware(auth_backend)
-app = falcon.asgi.App(middleware=[auth_middleware])
+app = falcon.asgi.App(middleware=[auth_middleware])  # type: ignore[type-var]
 
 
 class HelloResource:
