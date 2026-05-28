@@ -32,7 +32,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "falcon >= 2",
+  "falcon >= 3",
 ]
 
 [project.optional-dependencies]

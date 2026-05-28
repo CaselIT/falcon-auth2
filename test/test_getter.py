@@ -254,7 +254,7 @@ class TestMultiGetter:
         assert await g.load_async(req) == "foo"
 
     @pytest.mark.asyncio
-    async def test_custom_async(self, falcon3):
+    async def test_custom_async(self):
         g1 = getter.ParamGetter("skip")
         g2 = ImplAsync()
 
