@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from abc import abstractmethod
+from collections.abc import Callable
+from collections.abc import Iterable
 from typing import Any
-from typing import Callable
-from typing import Iterable
-from typing import Optional
 
 from ..exc import UserNotFound
 from ..getter import Getter
@@ -20,7 +21,7 @@ class AuthBackend(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         """Authenticates the request and returns the authenticated user.
 
         If a request cannot be authenticated a backed should raise:
@@ -69,15 +70,17 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             Defaults to ``None``.
     """
 
-    def __init__(self, user_loader: Callable, *, challenges: Optional[Iterable[str]] = None):
+    def __init__(
+        self, user_loader: Callable[..., Any], *, challenges: Iterable[str] | None = None
+    ) -> None:
         if not callable(user_loader):
             raise TypeError(f"Expected {user_loader} to be a callable object")
 
         self.user_loader = user_loader
-        self.user_loader_is_async = None
+        self.user_loader_is_async: bool | None = None
         self.challenges = tuple(challenges) if challenges else None
 
-    def load_user(self, attributes: RequestAttributes, *args, **kwargs) -> Any:
+    def load_user(self, attributes: RequestAttributes, *args: Any, **kwargs: Any) -> Any:
         """Invokes the provided ``user_loader`` callable to allow the app to retrieve
         the user record. If no such record is found, raises a :class:`~.UserNotFound`
         exception.
@@ -134,7 +137,7 @@ class NoAuthBackend(BaseAuthBackend):
             Defaults to ``None``.
     """
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         "Authenticates the request and returns the authenticated user."
         return {"user": self.load_user(attributes)}
 
@@ -177,11 +180,11 @@ class GenericAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable,
+        user_loader: Callable[[RequestAttributes, str], Any],
         getter: Getter,
         *,
-        payload_key: Optional[str] = None,
-        challenges: Optional[Iterable[str]] = None,
+        payload_key: str | None = None,
+        challenges: Iterable[str] | None = None,
     ):
         super().__init__(user_loader, challenges=challenges)
         check_getter(getter)
@@ -191,11 +194,15 @@ class GenericAuthBackend(BaseAuthBackend):
         self.getter = getter
         self.payload_key = payload_key
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         "Authenticates the request and returns the authenticated user."
         is_async = attributes[4]
         if is_async and not self.getter.async_calls_sync_load:
-            auth_data = await_(self.getter.load_async(attributes[0], challenges=self.challenges))
+            auth_data = await_(
+                self.getter.load_async(
+                    attributes[0], challenges=self.challenges  # type: ignore[arg-type]
+                )
+            )
         else:
             auth_data = self.getter.load(attributes[0], challenges=self.challenges)
         result = {"user": self.load_user(attributes, auth_data)}

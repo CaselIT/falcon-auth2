@@ -1,14 +1,19 @@
-from typing import Any
-from typing import Iterable
-from typing import Tuple
+from __future__ import annotations
 
-from falcon import Request
-from falcon import Response
+from collections.abc import Iterable
+from collections.abc import Mapping
+from typing import Any
+from typing import TYPE_CHECKING
 
 from .backends import AuthBackend
 from .utils import check_backend
 from .utils import greenlet_spawn
 from .utils import RequestAttributes
+
+if TYPE_CHECKING:
+    from falcon import asgi
+    from falcon import Request
+    from falcon import Response
 
 
 class AuthMiddleware:
@@ -58,7 +63,7 @@ class AuthMiddleware:
         self.exempt_methods = frozenset(exempt_methods)
         self.context_attr = context_attr
 
-    def _get_auth_settings(self, resource: Any) -> Tuple[bool, frozenset, AuthBackend]:
+    def _get_auth_settings(self, resource: Any) -> tuple[bool, frozenset[str], AuthBackend]:
         "Returns a tuple with the configuration to use for this resource."
         auth_settings = getattr(resource, "auth", None)
         if auth_settings:
@@ -69,7 +74,7 @@ class AuthMiddleware:
             )
         return False, self.exempt_methods, self.backend
 
-    def _process_resource(self, attributes: RequestAttributes):
+    def _process_resource(self, attributes: RequestAttributes) -> None:
         "Processes a resource"
         req = attributes[0]
         if req.uri_template in self.exempt_templates:
@@ -82,7 +87,9 @@ class AuthMiddleware:
         results.setdefault("backend", backend)
         setattr(req.context, self.context_attr, results)
 
-    def process_resource(self, req: Request, resp: Response, resource: Any, params: dict):
+    def process_resource(
+        self, req: Request, resp: Response, resource: Any, params: Mapping[str, Any]
+    ) -> None:
         """Called by falcon when processing a resource.
 
         It will obtain the configuration to use on the resource and, if required, call the
@@ -91,8 +98,8 @@ class AuthMiddleware:
         self._process_resource(RequestAttributes(req, resp, resource, params, False))
 
     async def process_resource_async(
-        self, req: Request, resp: Response, resource: Any, params: dict
-    ):
+        self, req: asgi.Request, resp: asgi.Response, resource: Any, params: Mapping[str, Any]
+    ) -> None:
         """Called by async falcon when processing a resource.
 
         It will obtain the configuration to use on the resource and, if required, call the

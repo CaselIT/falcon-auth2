@@ -2,7 +2,6 @@ import falcon
 import pytest
 
 from falcon_auth2 import exc
-from falcon_auth2.utils.compat import falcon2
 
 
 @pytest.fixture
@@ -30,9 +29,15 @@ def user():
     return User(id=1, user="foo", pwd="bar")
 
 
+@pytest.fixture()
+def require_async():
+    pytest.importorskip("greenlet", reason="greenlet is required to run async tests")
+
+
 def create_app(auth_middleware, resource, asgi):
 
     if asgi:
+        pytest.importorskip("greenlet", reason="greenlet is required to run async tests")
         from falcon.asgi import App
 
         async def handle(req, resp, ex, params):
@@ -40,10 +45,7 @@ def create_app(auth_middleware, resource, asgi):
 
         app = App(middleware=[auth_middleware])
     else:
-        if falcon2:
-            from falcon import API as App
-        else:
-            from falcon import App
+        from falcon import App
 
         def handle(req, resp, ex, params):
             if isinstance(ex, falcon.HTTPError):
@@ -57,16 +59,3 @@ def create_app(auth_middleware, resource, asgi):
 
     app.add_error_handler(Exception, handle)
     return app
-
-
-@pytest.fixture
-def falcon3():
-    if falcon2:
-        pytest.skip("Requires async support added in falcon 3")
-
-
-def set_text(res, text):
-    if falcon2:
-        res.body = text
-    else:
-        res.text = text

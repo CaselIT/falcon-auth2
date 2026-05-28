@@ -1,8 +1,8 @@
-from .base import AuthBackend
-from .base import BaseAuthBackend
-from .base import GenericAuthBackend
-from .base import NoAuthBackend
-from .basic import BasicAuthBackend
-from .jwt import JWTAuthBackend
-from .meta import CallBackBackend
-from .meta import MultiAuthBackend
+from .base import AuthBackend as AuthBackend
+from .base import BaseAuthBackend as BaseAuthBackend
+from .base import GenericAuthBackend as GenericAuthBackend
+from .base import NoAuthBackend as NoAuthBackend
+from .basic import BasicAuthBackend as BasicAuthBackend
+from .jwt import JWTAuthBackend as JWTAuthBackend
+from .meta import CallBackBackend as CallBackBackend
+from .meta import MultiAuthBackend as MultiAuthBackend

@@ -3,9 +3,7 @@ import pytest
 
 from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import Getter
-from falcon_auth2.utils.compat import falcon2
 from ..conftest import create_app
-from ..conftest import set_text
 from ..conftest import User
 
 
@@ -13,22 +11,22 @@ class AuthResource:
     def on_post(self, req, resp):
         user = req.context.auth["user"]
         self.context = req.context.auth
-        set_text(resp, str(user))
+        resp.text = str(user)
 
     def on_get(self, req, resp, **kwargs):
         self.context = req.context.auth
-        set_text(resp, "Success")
+        resp.text = "Success"
 
 
 class AuthResourceAsync:
     async def on_post(self, req, resp):
         user = req.context.auth["user"]
         self.context = req.context.auth
-        set_text(resp, str(user))
+        resp.text = str(user)
 
     async def on_get(self, req, resp, **kwargs):
         self.context = req.context.auth
-        set_text(resp, "Success")
+        resp.text = "Success"
 
 
 class ResourceFixture:
@@ -67,12 +65,7 @@ def create_app_backend(backend_gn, resource, asgi):
 
 @pytest.fixture(params=[True, False], ids=["asgi", "wsgi"])
 def asgi(request):
-    is_asgi = request.param
-
-    if is_asgi and falcon2:
-        pytest.skip("Requires async support added in falcon 3")
-
-    return is_asgi
+    return request.param
 
 
 @pytest.fixture

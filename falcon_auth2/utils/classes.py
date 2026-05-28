@@ -1,4 +1,5 @@
 from typing import Any
+from typing import Mapping
 from typing import NamedTuple
 
 from falcon import Request
@@ -16,7 +17,7 @@ class RequestAttributes(NamedTuple):
     "The falcon response."
     resource: Any
     "The falcon responder resource."
-    params: dict
+    params: Mapping[str, Any]
     "The parameters of passed in the url."
     is_async: bool
     "Indicates that authenticate is running in async mode."

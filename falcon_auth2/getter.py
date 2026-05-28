@@ -1,19 +1,19 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import Iterable
-from typing import Optional
-from typing import Tuple
+from collections.abc import Iterable
+from typing import ClassVar
+from typing import TYPE_CHECKING
 
-from falcon import Request
+from falcon.asgi import Request as AsyncRequest
 
 from .exc import BackendNotApplicable
 from .utils import await_
 from .utils import greenlet_spawn
 
-try:
-    from falcon.asgi import Request as AsyncRequest
-except ImportError:  # pragma: no cover
-    AsyncRequest = type(None)
+if TYPE_CHECKING:
+    from falcon import Request
 
 
 class Getter(metaclass=ABCMeta):
@@ -25,7 +25,7 @@ class Getter(metaclass=ABCMeta):
         In these cases the sync version may just raise an exception.
     """
 
-    async_calls_sync_load = None
+    async_calls_sync_load: ClassVar[bool | None] = None
     """Indicates if this Getter has an async load implementation that is not just a fallback to
     sync :meth:`.load` method, like the default :meth:`.load_async` method.
 
@@ -34,13 +34,13 @@ class Getter(metaclass=ABCMeta):
     (by setting it to a valued different than ``None``).
     """
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         # Use dict instead of accessing it directly to properly control nested subclasses
         if cls.__dict__.get("async_calls_sync_load") is None:
             cls.async_calls_sync_load = cls.load_async == Getter.load_async
 
     @abstractmethod
-    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
         """Loads the specified attribute from the provided request.
 
         If a getter cannot be used with the current request, a :class:`~.BackendNotApplicable`
@@ -57,7 +57,9 @@ class Getter(metaclass=ABCMeta):
             str: The loaded data, in case of success.
         """
 
-    async def load_async(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    async def load_async(
+        self, req: AsyncRequest, *, challenges: Iterable[str] | None = None
+    ) -> str:
         """Async version of :meth:`.load`.
         The default implementation simply calls :meth:`.load`, but subclasses may override
         this implementation to provide an async version.
@@ -75,7 +77,7 @@ class HeaderGetter(Getter):
     def __init__(self, header_key: str):
         self.header_key = header_key
 
-    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
         """Loads the header from the provided request"""
         header_value = req.get_header(self.header_key)
         if not header_value:
@@ -100,7 +102,7 @@ class AuthHeaderGetter(HeaderGetter):
         super().__init__(header_key)
         self.auth_header_type = auth_header_type.casefold()
 
-    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
         """Loads the auth header from the provided request"""
         prefix, _, value = super().load(req, challenges=challenges).partition(" ")
         if prefix.casefold() != self.auth_header_type:
@@ -141,7 +143,7 @@ class ParamGetter(Getter):
     def __init__(self, param_name: str):
         self.param_name = param_name
 
-    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
         """Loads the parameter from the provided request"""
         param_value = req.get_param_as_list(self.param_name)
         if not param_value:
@@ -169,7 +171,7 @@ class CookieGetter(Getter):
     def __init__(self, cookie_name: str):
         self.cookie_name = cookie_name
 
-    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
         """Loads the cookie from the provided request"""
         cookie_value = req.get_cookie_values(self.cookie_name)
         if not cookie_value:
@@ -201,28 +203,30 @@ class MultiGetter(Getter):
     async_calls_sync_load = True
 
     def __init__(self, getters: Iterable[Getter]):
-        self.getters: Tuple[Getter] = tuple(getters)
+        self.getters = tuple(getters)
         if len(self.getters) < 2:
             raise ValueError("Must pass more than one getter")
         if any(not isinstance(g, Getter) for g in self.getters):
             raise TypeError("All getter must inherit from Getter")
 
-    def load(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    def load(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
         """Loads the value from the provided request using the provided getters"""
         is_async = isinstance(req, AsyncRequest)
         for g in self.getters:
             try:
                 if is_async and not g.async_calls_sync_load:
-                    return await_(g.load_async(req))
+                    return await_(g.load_async(req, challenges=challenges))  # type: ignore[arg-type]
                 else:
-                    return g.load(req)
+                    return g.load(req, challenges=challenges)
             except BackendNotApplicable:
                 pass
         raise BackendNotApplicable(
             description="No authentication information found", challenges=challenges
         )
 
-    async def load_async(self, req: Request, *, challenges: Optional[Iterable[str]] = None) -> str:
+    async def load_async(
+        self, req: AsyncRequest, *, challenges: Iterable[str] | None = None
+    ) -> str:
         """Async version of :meth:`.load`.
 
         Makes sure ``load`` is called inside a greenlet spawn context

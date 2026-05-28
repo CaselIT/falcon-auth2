@@ -1,7 +1,8 @@
-from typing import Callable
-from typing import Iterable
-from typing import List
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Callable
+from collections.abc import Iterable
+from typing import Any
 
 from falcon import HTTPUnauthorized
 
@@ -49,8 +50,8 @@ class CallBackBackend(AuthBackend):
         self,
         backend: AuthBackend,
         *,
-        on_success: Optional[Callable] = None,
-        on_failure: Optional[Callable] = None,
+        on_success: Callable[[RequestAttributes, AuthBackend, dict[str, Any]], Any] | None = None,
+        on_failure: Callable[[RequestAttributes, AuthBackend, Exception], Any] | None = None,
     ):
         check_backend(backend)
         if on_success and not callable(on_success):
@@ -60,11 +61,11 @@ class CallBackBackend(AuthBackend):
 
         self.backend = backend
         self.on_success = on_success
-        self.on_success_is_async = None
+        self.on_success_is_async: bool | None = None
         self.on_failure = on_failure
-        self.on_failure_is_async = None
+        self.on_failure_is_async: bool | None = None
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         "Authenticates the request and returns the authenticated user."
         try:
             results = self.backend.authenticate(attributes)
@@ -119,10 +120,15 @@ class MultiAuthBackend(AuthBackend):
                 are propagated.
     """
 
-    def __init__(self, backends: Iterable[AuthBackend], *, continue_on: Optional[Callable] = None):
+    def __init__(
+        self,
+        backends: Iterable[AuthBackend],
+        *,
+        continue_on: Callable[[AuthBackend, Exception], bool] | None = None,
+    ):
         self.backends = tuple(backends)
         if len(self.backends) < 2:
-            raise ValueError("Must pass more than two backend")
+            raise ValueError("Must pass at least two backends")
         if any(not isinstance(b, AuthBackend) for b in self.backends):
             raise TypeError("All backends must inherit from `AuthBackend`")
         if continue_on and not callable(continue_on):
@@ -130,9 +136,9 @@ class MultiAuthBackend(AuthBackend):
 
         self.continue_on = continue_on or self._default_continue
 
-    def authenticate(self, attributes: RequestAttributes):
+    def authenticate(self, attributes: RequestAttributes) -> dict[Any, Any]:
         "Authenticates the request and returns the authenticated user."
-        challenges = []
+        challenges: list[str] = []
 
         for backend in self.backends:
             try:
@@ -150,11 +156,11 @@ class MultiAuthBackend(AuthBackend):
         )
 
     @staticmethod
-    def _default_continue(backend: AuthBackend, exc: Exception):
+    def _default_continue(backend: AuthBackend, exc: Exception) -> bool:
         return isinstance(exc, BackendNotApplicable)
 
     @staticmethod
-    def _append_challenges(challenges: List[str], err: HTTPUnauthorized):
+    def _append_challenges(challenges: list[str], err: HTTPUnauthorized) -> None:
         if err.headers:
             headers = err.headers if isinstance(err.headers, dict) else dict(err.headers)
             www_authenticate = headers.get("WWW-Authenticate")

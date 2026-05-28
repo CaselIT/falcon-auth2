@@ -1,8 +1,9 @@
-import base64
-from typing import Callable
-from typing import Optional
+from __future__ import annotations
 
-from falcon import Request
+import base64
+from collections.abc import Callable
+from typing import Any
+from typing import TYPE_CHECKING
 
 from .base import BaseAuthBackend
 from ..exc import BackendNotApplicable
@@ -11,6 +12,9 @@ from ..getter import Getter
 from ..utils import await_
 from ..utils import check_getter
 from ..utils import RequestAttributes
+
+if TYPE_CHECKING:
+    from falcon import Request
 
 
 class BasicAuthBackend(BaseAuthBackend):
@@ -56,10 +60,10 @@ class BasicAuthBackend(BaseAuthBackend):
 
     def __init__(
         self,
-        user_loader: Callable,
+        user_loader: Callable[[RequestAttributes, str, str], Any],
         *,
         auth_header_type: str = "Basic",
-        getter: Optional[Getter] = None,
+        getter: Getter | None = None,
     ):
         super().__init__(user_loader, challenges=(auth_header_type,))
         if getter:
@@ -67,9 +71,11 @@ class BasicAuthBackend(BaseAuthBackend):
         self.auth_header_type = auth_header_type
         self.getter = getter or AuthHeaderGetter(auth_header_type)
 
-    def _extract_credentials(self, req: Request, is_async: bool):
+    def _extract_credentials(self, req: Request, is_async: bool) -> tuple[str, str]:
         if is_async and not self.getter.async_calls_sync_load:
-            auth_data = await_(self.getter.load_async(req, challenges=self.challenges))
+            auth_data = await_(
+                self.getter.load_async(req, challenges=self.challenges)  # type: ignore[arg-type]
+            )
         else:
             auth_data = self.getter.load(req, challenges=self.challenges)
 
@@ -84,7 +90,7 @@ class BasicAuthBackend(BaseAuthBackend):
 
         return username, password
 
-    def authenticate(self, attributes: RequestAttributes) -> dict:
+    def authenticate(self, attributes: RequestAttributes) -> dict[str, Any]:
         "Authenticates the request and returns the authenticated user."
         username, password = self._extract_credentials(attributes[0], attributes[-1])
         return {"user": self.load_user(attributes, username, password)}

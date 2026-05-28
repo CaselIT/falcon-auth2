@@ -163,7 +163,7 @@ class TestWithMultiBackendAuth(ResourceFixture):
 
     def test_init_raises(self):
         bl = [NoAuthBackend(lambda x: None)] * 2
-        with pytest.raises(ValueError, match="Must pass more than two backend"):
+        with pytest.raises(ValueError, match="Must pass at least two backends"):
             MultiAuthBackend(bl[:-1])
         with pytest.raises(TypeError, match="All backends must inherit from"):
             MultiAuthBackend(bl + [123])
