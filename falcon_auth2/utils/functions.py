@@ -1,8 +1,6 @@
 from asyncio import iscoroutine
 from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Tuple
+from collections.abc import Callable
 
 from .asyncio_compat import await_
 
@@ -27,12 +25,12 @@ def check_getter(getter: Any):
 
 def call_maybe_async(
     support_async: bool,
-    function_is_async: Optional[bool],
+    function_is_async: bool | None,
     err_msg: str,
     function: Callable,
     *args,
     **kwargs,
-) -> Tuple[Any, bool]:
+) -> tuple[Any, bool]:
     """Calls a function and waits for the result if it is async.
 
     Args:

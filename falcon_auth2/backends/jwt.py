@@ -1,7 +1,4 @@
-from typing import Callable
-from typing import List
-from typing import Optional
-from typing import Union
+from collections.abc import Callable
 
 from falcon import Request
 
@@ -84,12 +81,12 @@ class JWTAuthBackend(BaseAuthBackend):
     def __init__(
         self,
         user_loader: Callable,
-        key: Union[str, bytes, dict, Callable[[dict, dict], Union[str, bytes]]],
+        key: str | bytes | dict | Callable[[dict, dict], str | bytes],
         *,
         auth_header_type: str = "Bearer",
-        getter: Optional[Getter] = None,
-        algorithms: Optional[Union[str, List[str]]] = "HS256",
-        claims_options: Optional[dict] = None,
+        getter: Getter | None = None,
+        algorithms: str | list[str] | None = "HS256",
+        claims_options: dict | None = None,
         leeway: int = 0,
     ):
         if not has_authlib:

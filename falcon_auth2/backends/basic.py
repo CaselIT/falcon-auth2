@@ -1,6 +1,5 @@
 import base64
-from typing import Callable
-from typing import Optional
+from collections.abc import Callable
 
 from falcon import Request
 
@@ -59,7 +58,7 @@ class BasicAuthBackend(BaseAuthBackend):
         user_loader: Callable,
         *,
         auth_header_type: str = "Basic",
-        getter: Optional[Getter] = None,
+        getter: Getter | None = None,
     ):
         super().__init__(user_loader, challenges=(auth_header_type,))
         if getter:

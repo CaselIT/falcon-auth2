@@ -2,8 +2,8 @@
 from contextvars import copy_context
 import sys
 from typing import Any, NoReturn
-from typing import Callable
-from typing import Coroutine
+from collections.abc import Callable
+from collections.abc import Coroutine
 
 try:
     import greenlet

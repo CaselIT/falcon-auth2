@@ -1,7 +1,5 @@
-from typing import Callable
-from typing import Iterable
-from typing import List
-from typing import Optional
+from collections.abc import Callable
+from collections.abc import Iterable
 
 from falcon import HTTPUnauthorized
 
@@ -49,8 +47,8 @@ class CallBackBackend(AuthBackend):
         self,
         backend: AuthBackend,
         *,
-        on_success: Optional[Callable] = None,
-        on_failure: Optional[Callable] = None,
+        on_success: Callable | None = None,
+        on_failure: Callable | None = None,
     ):
         check_backend(backend)
         if on_success and not callable(on_success):
@@ -119,7 +117,7 @@ class MultiAuthBackend(AuthBackend):
                 are propagated.
     """
 
-    def __init__(self, backends: Iterable[AuthBackend], *, continue_on: Optional[Callable] = None):
+    def __init__(self, backends: Iterable[AuthBackend], *, continue_on: Callable | None = None):
         self.backends = tuple(backends)
         if len(self.backends) < 2:
             raise ValueError("Must pass more than two backend")
@@ -154,7 +152,7 @@ class MultiAuthBackend(AuthBackend):
         return isinstance(exc, BackendNotApplicable)
 
     @staticmethod
-    def _append_challenges(challenges: List[str], err: HTTPUnauthorized):
+    def _append_challenges(challenges: list[str], err: HTTPUnauthorized):
         if err.headers:
             headers = err.headers if isinstance(err.headers, dict) else dict(err.headers)
             www_authenticate = headers.get("WWW-Authenticate")

@@ -1,9 +1,8 @@
 from abc import ABCMeta
 from abc import abstractmethod
 from typing import Any
-from typing import Callable
-from typing import Iterable
-from typing import Optional
+from collections.abc import Callable
+from collections.abc import Iterable
 
 from ..exc import UserNotFound
 from ..getter import Getter
@@ -69,7 +68,7 @@ class BaseAuthBackend(AuthBackend, metaclass=ABCMeta):
             Defaults to ``None``.
     """
 
-    def __init__(self, user_loader: Callable, *, challenges: Optional[Iterable[str]] = None):
+    def __init__(self, user_loader: Callable, *, challenges: Iterable[str] | None = None):
         if not callable(user_loader):
             raise TypeError(f"Expected {user_loader} to be a callable object")
 
@@ -180,8 +179,8 @@ class GenericAuthBackend(BaseAuthBackend):
         user_loader: Callable,
         getter: Getter,
         *,
-        payload_key: Optional[str] = None,
-        challenges: Optional[Iterable[str]] = None,
+        payload_key: str | None = None,
+        challenges: Iterable[str] | None = None,
     ):
         super().__init__(user_loader, challenges=challenges)
         check_getter(getter)

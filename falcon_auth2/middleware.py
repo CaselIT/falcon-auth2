@@ -1,6 +1,5 @@
 from typing import Any
-from typing import Iterable
-from typing import Tuple
+from collections.abc import Iterable
 
 from falcon import Request
 from falcon import Response
@@ -58,7 +57,7 @@ class AuthMiddleware:
         self.exempt_methods = frozenset(exempt_methods)
         self.context_attr = context_attr
 
-    def _get_auth_settings(self, resource: Any) -> Tuple[bool, frozenset, AuthBackend]:
+    def _get_auth_settings(self, resource: Any) -> tuple[bool, frozenset, AuthBackend]:
         "Returns a tuple with the configuration to use for this resource."
         auth_settings = getattr(resource, "auth", None)
         if auth_settings:
