@@ -27,10 +27,10 @@ See [readme_example](./examples/readme_example.py) and [readme_example_async](./
 
 ```py
 import falcon
-from falcon_auth2 import AuthMiddleware
+from falcon_auth2 import AuthMiddleware, RequestAttributes
 from falcon_auth2.backends import BasicAuthBackend
 
-def user_loader(attributes, user, password):
+def user_loader(attributes: RequestAttributes, user: str, password: str) -> dict[str, str] | None:
     if authenticate(user, password):
         return {"username": user}
     return None
@@ -41,7 +41,7 @@ auth_middleware = AuthMiddleware(auth_backend)
 app = falcon.App(middleware=[auth_middleware])
 
 class HelloResource:
-    def on_get(self, req, resp):
+    def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         # req.context.auth is of the form:
         #
         #   {
@@ -61,10 +61,11 @@ app.add_route('/hello', HelloResource())
 The middleware allows each resource to customize the backend used for authentication or the excluded methods. A resource can also specify that does not need authentication.
 
 ```py
-from falcon_auth2 import HeaderGetter
+import falcon
+from falcon_auth2 import HeaderGetter, RequestAttributes
 from falcon_auth2.backends import GenericAuthBackend
 
-def user_header_loader(attr, user_header):
+def user_header_loader(attributes: RequestAttributes, user_header: str) -> str | None:
     # authenticate the user with the user_header
     return user_header
 
@@ -74,10 +75,10 @@ class GenericResource:
         "exempt_methods": ["GET"],
     }
 
-    def on_get(self, req, resp):
+    def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         resp.media = {"type": "No authentication for GET"}
 
-    def on_post(self, req, resp):
+    def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
         resp.media = {"info": f"User header {req.context.auth['user']}"}
 
 app.add_route("/generic", GenericResource())
@@ -85,14 +86,13 @@ app.add_route("/generic", GenericResource())
 class NoAuthResource:
     auth = {"auth_disabled": True}
 
-    def on_get(self, req, resp):
+    def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
         resp.text = "No auth in this resource"
 
-    def on_post(self, req, resp):
+    def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
         resp.text = "No auth in this resource"
 
 app.add_route("/no-auth", NoAuthResource())
-
 ```
 
 ## Included Authentication backends
