@@ -1,3 +1,4 @@
+import falcon
 from falcon import Request
 from falcon import RequestOptions
 from falcon import testing
@@ -148,6 +149,8 @@ class TestParamGetter:
 
     @pytest.mark.asyncio
     async def test_form_url_encoded(self, patch_exception_str):
+        if not falcon.__version__.startswith("3."):
+            pytest.skip("auto_parse_form_urlencoded was deprecated in Falcon 4+")
         opt = RequestOptions()
         opt.auto_parse_form_urlencoded = True
         env = testing.create_environ(

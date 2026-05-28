@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 
 from authlib.jose import JsonWebToken
 from authlib.jose import jwt
@@ -28,6 +29,8 @@ def find_user(user_dict):
 
     return m
 
+def utcnow():
+    return datetime.now(timezone.utc)
 
 class TestJWTAuth(ResourceFixture):
     def test_import_error(self, monkeypatch):
@@ -179,9 +182,9 @@ class TestJWTAuth(ResourceFixture):
             "iss": "my-iss",
             "sub": "1",
             "aud": "my-aud",
-            "exp": datetime.utcnow() + timedelta(seconds=10),
-            "nbf": datetime.utcnow(),
-            "iat": datetime.utcnow(),
+            "exp": utcnow() + timedelta(seconds=10),
+            "nbf": utcnow(),
+            "iat": utcnow(),
         }
         req = client.simulate_post("/auth", headers={"Authorization": jwt_token(key, payload)})
         assert req.text == str(user)
@@ -194,9 +197,9 @@ class TestJWTAuth(ResourceFixture):
                 "iss": "my-iss",
                 "sub": "1",
                 "aud": "my-aud",
-                "exp": datetime.utcnow() + timedelta(seconds=10),
-                "nbf": datetime.utcnow(),
-                "iat": datetime.utcnow(),
+                "exp": utcnow() + timedelta(seconds=10),
+                "nbf": utcnow(),
+                "iat": utcnow(),
             }
             del payload[key]
             req = client.simulate_post("/auth", headers={"Authorization": jwt_token(key, payload)})
@@ -208,9 +211,9 @@ class TestJWTAuth(ResourceFixture):
             "iss": "my-iss",
             "sub": "1",
             "aud": "my-aud",
-            "exp": datetime.utcnow() - timedelta(seconds=10),
-            "nbf": datetime.utcnow() - timedelta(seconds=10),
-            "iat": datetime.utcnow() - timedelta(seconds=10),
+            "exp": utcnow() - timedelta(seconds=10),
+            "nbf": utcnow() - timedelta(seconds=10),
+            "iat": utcnow() - timedelta(seconds=10),
         }
         req = client.simulate_post("/auth", headers={"Authorization": jwt_token(key, payload)})
         assert req.status == falcon.HTTP_UNAUTHORIZED
