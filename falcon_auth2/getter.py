@@ -202,8 +202,6 @@ class MultiGetter(Getter):
 
     async_calls_sync_load = True
 
-    getters: tuple[Getter, ...]
-
     def __init__(self, getters: Iterable[Getter]):
         self.getters = tuple(getters)
         if len(self.getters) < 2:
