@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import base64
 from collections.abc import Callable
 from typing import Any
-
-from falcon import Request
+from typing import TYPE_CHECKING
 
 from .base import BaseAuthBackend
 from ..exc import BackendNotApplicable
@@ -11,6 +12,9 @@ from ..getter import Getter
 from ..utils import await_
 from ..utils import check_getter
 from ..utils import RequestAttributes
+
+if TYPE_CHECKING:
+    from falcon import Request
 
 
 class BasicAuthBackend(BaseAuthBackend):
@@ -69,7 +73,9 @@ class BasicAuthBackend(BaseAuthBackend):
 
     def _extract_credentials(self, req: Request, is_async: bool) -> tuple[str, str]:
         if is_async and not self.getter.async_calls_sync_load:
-            auth_data = await_(self.getter.load_async(req, challenges=self.challenges))
+            auth_data = await_(
+                self.getter.load_async(req, challenges=self.challenges)  # type: ignore[arg-type]
+            )
         else:
             auth_data = self.getter.load(req, challenges=self.challenges)
 

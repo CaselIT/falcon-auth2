@@ -1,18 +1,19 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from abc import abstractmethod
 from collections.abc import Iterable
 from typing import ClassVar
+from typing import TYPE_CHECKING
 
-from falcon import Request
+from falcon.asgi import Request as AsyncRequest
 
 from .exc import BackendNotApplicable
 from .utils import await_
 from .utils import greenlet_spawn
 
-try:
-    from falcon.asgi import Request as AsyncRequest
-except ImportError:  # pragma: no cover
-    AsyncRequest = type(None)  # type: ignore
+if TYPE_CHECKING:
+    from falcon import Request
 
 
 class Getter(metaclass=ABCMeta):
@@ -56,7 +57,9 @@ class Getter(metaclass=ABCMeta):
             str: The loaded data, in case of success.
         """
 
-    async def load_async(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
+    async def load_async(
+        self, req: AsyncRequest, *, challenges: Iterable[str] | None = None
+    ) -> str:
         """Async version of :meth:`.load`.
         The default implementation simply calls :meth:`.load`, but subclasses may override
         this implementation to provide an async version.
@@ -214,7 +217,7 @@ class MultiGetter(Getter):
         for g in self.getters:
             try:
                 if is_async and not g.async_calls_sync_load:
-                    return await_(g.load_async(req, challenges=challenges))
+                    return await_(g.load_async(req, challenges=challenges))  # type: ignore[arg-type]
                 else:
                     return g.load(req, challenges=challenges)
             except BackendNotApplicable:
@@ -223,7 +226,9 @@ class MultiGetter(Getter):
             description="No authentication information found", challenges=challenges
         )
 
-    async def load_async(self, req: Request, *, challenges: Iterable[str] | None = None) -> str:
+    async def load_async(
+        self, req: AsyncRequest, *, challenges: Iterable[str] | None = None
+    ) -> str:
         """Async version of :meth:`.load`.
 
         Makes sure ``load`` is called inside a greenlet spawn context

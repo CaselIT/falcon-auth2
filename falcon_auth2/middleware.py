@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from collections.abc import Mapping
 from typing import Any
-
-from falcon import Request
-from falcon import Response
+from typing import TYPE_CHECKING
 
 from .backends import AuthBackend
 from .utils import check_backend
 from .utils import greenlet_spawn
 from .utils import RequestAttributes
+
+if TYPE_CHECKING:
+    from falcon import asgi
+    from falcon import Request
+    from falcon import Response
 
 
 class AuthMiddleware:
@@ -93,7 +98,7 @@ class AuthMiddleware:
         self._process_resource(RequestAttributes(req, resp, resource, params, False))
 
     async def process_resource_async(
-        self, req: Request, resp: Response, resource: Any, params: Mapping[str, Any]
+        self, req: asgi.Request, resp: asgi.Response, resource: Any, params: Mapping[str, Any]
     ) -> None:
         """Called by async falcon when processing a resource.
 

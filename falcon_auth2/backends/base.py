@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from abc import abstractmethod
 from collections.abc import Callable
@@ -196,7 +198,11 @@ class GenericAuthBackend(BaseAuthBackend):
         "Authenticates the request and returns the authenticated user."
         is_async = attributes[4]
         if is_async and not self.getter.async_calls_sync_load:
-            auth_data = await_(self.getter.load_async(attributes[0], challenges=self.challenges))
+            auth_data = await_(
+                self.getter.load_async(
+                    attributes[0], challenges=self.challenges  # type: ignore[arg-type]
+                )
+            )
         else:
             auth_data = self.getter.load(attributes[0], challenges=self.challenges)
         result = {"user": self.load_user(attributes, auth_data)}

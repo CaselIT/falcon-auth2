@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Any
-
-from falcon import Request
+from typing import TYPE_CHECKING
 
 from .base import BaseAuthBackend
 from ..exc import BackendNotApplicable
@@ -10,6 +11,9 @@ from ..getter import Getter
 from ..utils import await_
 from ..utils import check_getter
 from ..utils import RequestAttributes
+
+if TYPE_CHECKING:
+    from falcon import Request
 
 try:
     from authlib.jose import JoseError
@@ -128,7 +132,9 @@ class JWTAuthBackend(BaseAuthBackend):
 
     def _validate_token(self, req: Request, is_async: bool) -> dict[str, Any]:
         if is_async and not self.getter.async_calls_sync_load:
-            token = await_(self.getter.load_async(req, challenges=self.challenges))
+            token = await_(
+                self.getter.load_async(req, challenges=self.challenges)  # type: ignore[arg-type]
+            )
         else:
             token = self.getter.load(req, challenges=self.challenges)
 
