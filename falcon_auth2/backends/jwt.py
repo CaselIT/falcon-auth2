@@ -74,8 +74,8 @@ class JWTAuthBackend(BaseAuthBackend):
             ``auth_header_type``.
         algorithms (str, List[str]): The signing algorithm(s) that should be supported.
             Using a list multiple values may be provided. Defaults to ``"HS256"``.
-            Allowed values are listed at `RFC7518: JSON Web Algorithms
-            <https://docs.authlib.org/en/latest/specs/rfc7518.html#specs-rfc7518>`_.
+            Allowed values are listed at `Algorithms
+            <https://jose.authlib.org/en/guide/algorithms/#algorithms>`_.
         claims_options (dict): The claims to validate in the token. By default the value
             returned by :meth:`.JWTAuthBackend.default_claims` is used.
         leeway (int): Leeway in seconds to pass to the ``JWTClaims.validate()`` call to

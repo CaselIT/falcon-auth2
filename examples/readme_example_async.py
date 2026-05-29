@@ -46,7 +46,7 @@ async def jwt_user_loader(
     return None
 
 
-# NOTE: this is just an example. A key should be property generated, like using:
+# NOTE: this is just an example. A key should be properly generated, like using:
 # key=jwk.generate_key('oct')
 key = jwk.import_key("not-a-secret-key", "oct")
 basic_backend = BasicAuthBackend(basic_user_loader)

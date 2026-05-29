@@ -183,7 +183,7 @@ class TestJWTAuth(ResourceFixture):
 
     def test_default_claims_ok(self, backend, client, key, user_dict):
         user = user_dict["1"]
-        backend.claims_options = backend.default_claims()
+        backend.claims.options = backend.default_claims()
         payload = {
             "iss": "my-iss",
             "sub": "1",
@@ -212,7 +212,7 @@ class TestJWTAuth(ResourceFixture):
             assert req.status == falcon.HTTP_UNAUTHORIZED, attr
 
     def test_default_claims_leeway(self, backend, client, key):
-        backend.claims_options = backend.default_claims()
+        backend.claims.options = backend.default_claims()
         payload = {
             "iss": "my-iss",
             "sub": "1",
