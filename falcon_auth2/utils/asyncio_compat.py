@@ -93,7 +93,7 @@ except ImportError:  # pragma: no cover
     greenlet = None  # type: ignore[assignment]
 
     def _not_implemented() -> NoReturn:
-        raise ValueError("Greesnlet is required to use this function")
+        raise ValueError("Greenlet is required to use this function")
 
     def await_(awaitable: Awaitable[_T]) -> _T:
         _not_implemented()

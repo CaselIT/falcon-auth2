@@ -7,11 +7,11 @@ from joserfc import jwk
 
 from falcon_auth2 import AuthMiddleware
 from falcon_auth2 import HeaderGetter
+from falcon_auth2 import RequestAttributes
 from falcon_auth2.backends import BasicAuthBackend
 from falcon_auth2.backends import GenericAuthBackend
 from falcon_auth2.backends import JWTAuthBackend
 from falcon_auth2.backends import MultiAuthBackend
-from falcon_auth2.utils.classes import RequestAttributes
 
 # To run this application with uvicorn (or any other asgi server)
 # uvicorn --port 8080 readme_example_async:app
