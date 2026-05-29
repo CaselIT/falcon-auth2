@@ -3,6 +3,9 @@ name: Publish to PyPI
 on:
   release:
     types: [created]
+  # push:
+  #   branches:
+  #     - "go_wheel_*"
 
 # env:
 #   USE_TEST_PYPI: true
