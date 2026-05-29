@@ -26,21 +26,22 @@ See below :ref:`example_wsgi` and :ref:`example_asgi` for complete examples.
 .. code:: python
 
     import falcon
-    from falcon_auth2 import AuthMiddleware
+    from falcon_auth2 import AuthMiddleware, RequestAttributes
     from falcon_auth2.backends import BasicAuthBackend
 
-    def user_loader(attributes, user, password):
+    def basic_user_loader(
+        attributes: RequestAttributes, user: str, password: str
+    ) -> dict[str, str] | None:
         if authenticate(user, password):
-            return {"username": user}
+            return {"username": user, "kind": "basic"}
         return None
 
     auth_backend = BasicAuthBackend(user_loader)
     auth_middleware = AuthMiddleware(auth_backend)
-    # use falcon.API in falcon 2
     app = falcon.App(middleware=[auth_middleware])
 
     class HelloResource:
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             # req.context.auth is of the form:
             #
             #   {
@@ -72,10 +73,10 @@ The middleware allows each resource to customize the backend used for authentica
             "exempt_methods": ["GET"],
         }
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             resp.media = {"type": "No authentication for GET"}
 
-        def on_post(self, req, resp):
+        def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
             resp.media = {"info": f"User header {req.context.auth['user']}"}
 
     app.add_route("/other", OtherResource())
@@ -83,10 +84,10 @@ The middleware allows each resource to customize the backend used for authentica
     class NoAuthResource:
         auth = {"auth_disabled": True}
 
-        def on_get(self, req, resp):
+        def on_get(self, req: falcon.Request, resp: falcon.Response) -> None:
             resp.media = "No auth in this resource"
 
-        def on_post(self, req, resp):
+        def on_post(self, req: falcon.Request, resp: falcon.Response) -> None:
             resp.media = "No auth in this resource"
 
     app.add_route("/no-auth", NoAuthResource())
