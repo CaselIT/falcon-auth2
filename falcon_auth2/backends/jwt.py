@@ -55,7 +55,7 @@ class JWTAuthBackend(BaseAuthBackend):
         key (KeyFlexible): The key to use to decode the tokens.
             This parameter is passed to the ``joserfc.jwt.decode()`` method and is used to verify
             the signature of the token.
-            A key can be passed as static key or a key set or a callable.
+            A key can be passed as static value or a key set or a callable.
             See `The key parameter <https://jose.authlib.org/en/guide/jwt/#the-key-parameter>`_
             for additional details on the supported values.
     Keyword Args:

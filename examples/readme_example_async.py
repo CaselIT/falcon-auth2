@@ -17,7 +17,7 @@ from falcon_auth2.utils.classes import RequestAttributes
 # uvicorn --port 8080 readme_example_async:app
 # You can then use httpie to interact with it. Example
 # http :8080/hello -a foo:bar
-# http :8080/hello 'Authorization:Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiYXIiLCJpc3MiOiJhbiBpc3N1ZXIiLCJhdWQiOiJhbiBhdWQiLCJpYXQiOjE2MDk0NTkyMDAsIm5iZiI6MTYwOTQ1OTIwMCwiZXhwIjoxOTI0OTkyMDAwfQ.-5n2vQl3ejYeHQFq6NyFFwTncya780S1BDlPKgffBMQ'
+# http :8080/hello 'Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiYXIiLCJpc3MiOiJhbiBpc3N1ZXIiLCJhdWQiOiJhbiBhdWQiLCJpYXQiOjE2MDk0NTkyMDAsIm5iZiI6MTYwOTQ1OTIwMCwiZXhwIjoxOTI0OTkyMDAwfQ.FDpE_-jL-reHrheIYVGbwdVf8g1HWFAoGJet_6zC2Tk'
 # http :8080/no-auth
 # http POST :8080/generic User:foo
 
