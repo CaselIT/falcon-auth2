@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 - Changed jwt library from Authlib to joserfc, since Authlib support for jwt is deprecated.
 - Ensure challenges are passed to single getter by ``MultiGetter``.
 - Dropped support for old python version. The library now requires python 3.10.
+- Dropped support for old falcon version. The library now requires falcon 3.0+.
 - Fully typed the library.
 
 ## [0.1.0]
