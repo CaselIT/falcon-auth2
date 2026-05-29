@@ -104,7 +104,7 @@ Implements [HTTP Basic Authentication](https://tools.ietf.org/html/rfc7617) wher
 #### `JWTAuthBackend`
 
 Implements [JSON Web Token (JWT) standard](https://tools.ietf.org/html/rfc7519) where clients should authenticate by passing the token key in the `Authorization` HTTP header. This backend makes use of the
-[Authlib](https://authlib.org) library.
+[joserfc](https://jose.authlib.org/en/) library.
 
 #### `GenericAuthBackend`
 
