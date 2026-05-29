@@ -44,6 +44,10 @@ Homepage = "https://github.com/CaselIT/falcon-auth2"
 Documentation = "https://falcon-auth2.readthedocs.io"
 "Issue Tracker" = "https://github.com/CaselIT/falcon-auth2/issues"
 
+[tool.distutils.egg_info]
+# ref https://github.com/pypa/setuptools/discussions/3348#discussioncomment-6556887
+tag-build = "dev"
+
 [tool.setuptools.dynamic]
 version = {attr = "falcon_auth2.__version__"}
 

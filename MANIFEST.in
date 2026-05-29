@@ -1,0 +1,2 @@
+prune test
+exclude setup.cfg tox.ini
